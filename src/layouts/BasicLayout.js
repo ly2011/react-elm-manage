@@ -178,6 +178,7 @@ class BasicLayout extends React.PureComponent {
     const currRouterData = this.matchParamsPath(pathname);
 
     if (!currRouterData) {
+      return '首页'
       // return 'Ant Design Pro';
     }
     const message = formatMessage({
