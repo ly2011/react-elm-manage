@@ -1,7 +1,7 @@
 // 管理员列表
 import React, { PureComponent, Fragment } from 'react'
 import { connect } from 'dva'
-import { Card, Form, Button, Divider, message, Row, Col, Input, AutoComplete, Modal } from 'antd'
+import { Card, Form, Button, Divider, message, Row, Col, Input, AutoComplete, Modal, Cascader } from 'antd'
 import StandardTable from '@/components/StandardTable'
 import PageHeaderWrapper from '@/components/PageHeaderWrapper'
 import styles from '../List/TableList.less'
@@ -54,7 +54,22 @@ class ShopList extends PureComponent {
   ]
 
   componentDidMount() {
+    // const { dispatch } = this.props
+    // dispatch({
+    //   type: 'shop/fetch'
+    // })
+    this.initData()
+  }
+
+  initData = async () => {
+    // 初始化数据
     const { dispatch } = this.props
+    dispatch({
+      type: 'shop/cityGuess'
+    })
+    dispatch({
+      type: 'shop/fetchShopCount'
+    })
     dispatch({
       type: 'shop/fetch'
     })
@@ -118,6 +133,12 @@ class ShopList extends PureComponent {
   }
 
   showEditModal = record => {
+    const {
+      shop: { foodCategory = [] }
+    } = this.props
+    if (!foodCategory.length) {
+      this.getCategory()
+    }
     this.setState({
       modalVisible: true,
       current: record || {}
@@ -167,10 +188,28 @@ class ShopList extends PureComponent {
     })
   }
 
+  getCategory = () => {
+    const { dispatch } = this.props
+    dispatch({
+      type: 'shop/queryFoodCategory'
+    })
+  }
+
+  handleSearchAddress = value => {
+    console.log('handleSearchAddress: ', value)
+    const { dispatch } = this.props
+    dispatch({
+      type: 'shop/searchPlace',
+      payload: {
+        keyword: value
+      }
+    })
+  }
+
   render() {
     const {
       loading,
-      shop: { list, pagination },
+      shop: { list, pagination, foodCategory, city, addressList },
       form: { getFieldDecorator }
     } = this.props
     const { selectedRows, modalVisible, done, current = {} } = this.state
@@ -196,14 +235,24 @@ class ShopList extends PureComponent {
               }}
               onSearch={value => {
                 console.log('input', value) // eslint-disable-line
+                this.handleSearchAddress(value)
               }}
               onPressEnter={value => {
                 console.log('enter', value) // eslint-disable-line
               }}
+              onSelect={value => {
+                current.address = value
+              }}
               placeholder="请输入地址"
-            />
+            >
+              {addressList.map(item => (
+                <AutoComplete.Option key={item.address} text={item.address}>
+                  {item.address}
+                </AutoComplete.Option>
+              ))}
+            </AutoComplete>
           )}
-          <span>当前城市： {current.city}</span>
+          <span>当前城市： {city ? city.name : null}</span>
         </FormItem>
         <FormItem label="店铺介绍" {...formItemLayout}>
           {getFieldDecorator('description', {
@@ -218,10 +267,7 @@ class ShopList extends PureComponent {
           })(<Input placeholder="请输入联系电话" />)}
         </FormItem>
         <FormItem label="店铺分类" {...formItemLayout}>
-          {getFieldDecorator('category', {
-            rules: [{ required: true, message: '请输入店铺分类' }],
-            initialValue: current.category
-          })(<Input placeholder="请输入店铺分类" />)}
+          <Cascader options={foodCategory} changeOnSelect placeholder="请选择店铺分类" />
         </FormItem>
         <FormItem label="店铺图片" {...formItemLayout}>
           {getFieldDecorator('image_path', {
