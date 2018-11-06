@@ -3,8 +3,7 @@
  */
 import { stringify } from 'qs'
 import request from '@/utils/request'
-
-const baseApi = 'http://127.0.0.1:7001'
+import { baseApi } from '@/config/env'
 
 /**
  * 获取管理员列表

@@ -48,25 +48,25 @@ export default {
         payload: response
       })
     },
-    *addShop(_, { call, put }) {
-      const response = yield call(addShop)
+    *addShop({ payload }, { call, put }) {
+      const response = yield call(addShop, payload)
       yield put({
-        type: 'addShop',
-        payload: response
+        type: 'saveAddShop',
+        payload
       })
     },
-    *updateShop(_, { call, put }) {
-      const response = yield call(updateShop)
+    *updateShop({ payload }, { call, put }) {
+      const response = yield call(updateShop, payload)
       yield put({
-        type: 'updateShop',
-        payload: response
+        type: 'saveUpdateShop',
+        payload
       })
     },
-    *delShop(_, { call, put }) {
-      const response = yield call(delShop)
+    *delShop({ payload }, { call, put }) {
+      const response = yield call(delShop, payload)
       yield put({
-        type: 'delShop',
-        payload: response
+        type: 'saveDeleteShop',
+        payload
       })
     },
     *queryFoodCategory(_, { call, put }) {
@@ -131,67 +131,69 @@ export default {
     }
   },
   reducers: {
-    save(state, action) {
+    save(state, { payload }) {
       return {
         ...state,
-        list: action.payload || []
+        list: payload || []
       }
     },
-    saveShopInfo(state, action) {
+    saveShopInfo(state, { payload }) {
       return {
         ...state,
-        currentShopInfo: action.payload || {}
+        currentShopInfo: payload || {}
       }
     },
-    saveShopCount(state, action) {
+    saveShopCount(state, { payload }) {
       return {
         ...state,
-        total: action.payload || 0
+        total: payload || 0
       }
     },
-    addShop(state, action) {
+    saveAddShop(state, { payload }) {
       return {
         ...state,
-        list: [...state.list, action.payload]
+        list: [...state.list, payload]
       }
     },
-    updateShop(state, action) {
+    saveUpdateShop(state, { payload }) {
       let { list } = state
       list = list.map(shop => {
-        if (shop._id === action.payload._id) {
-          return action.payload
+        if (shop._id === payload._id) {
+          return { ...shop, ...payload }
         }
+        return shop
       })
+      console.log('updateShop - list: ', list)
       return {
         ...state,
         list
       }
     },
-    delShop(state, action) {
+    saveDeleteShop(state, { payload }) {
       const { list } = state
-      const index = list.findIndex(item => item._id === action.payload)
+      const index = list.findIndex(item => item._id === payload)
       list.splice(index, 1)
       return {
         ...state,
         list
       }
     },
-    saveFoodCategory(state, action) {
+    saveFoodCategory(state, { payload }) {
       return {
         ...state,
-        foodCategory: action.payload || []
+        foodCategory: payload || []
       }
     },
-    saveAddressList(state, action) {
+    saveAddressList(state, { payload }) {
       return {
         ...state,
-        addressList: action.payload || []
+        addressList: payload || []
       }
     },
-    saveCityGuess(state, action) {
+    saveCityGuess(state, { payload }) {
       return {
         ...state,
-        city: action.payload || {}
+        city: payload || {}
       }
     }
   }
