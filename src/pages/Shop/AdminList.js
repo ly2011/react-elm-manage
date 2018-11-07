@@ -33,9 +33,20 @@ class AdminList extends PureComponent {
 
   componentDidMount() {
     // ajax
-    const { dispatch } = this.props
+    const {
+      dispatch,
+      admin: { pagination }
+    } = this.props
     dispatch({
-      type: 'admin/fetch'
+      type: 'admin/fetchAdminCount'
+    })
+    const params = {
+      currentPage: pagination.current,
+      pageSize: pagination.pageSize
+    }
+    dispatch({
+      type: 'admin/fetch',
+      payload: params
     })
   }
 
@@ -69,7 +80,8 @@ class AdminList extends PureComponent {
     // 重新拉取数据
     const { dispatch } = this.props
     dispatch({
-      type: 'admin/fetch'
+      type: 'admin/fetch',
+      payload: params
     })
   }
 
@@ -113,6 +125,7 @@ class AdminList extends PureComponent {
               columns={this.columns}
               dataSource={list}
               pagination={pagination}
+              onChange={this.handleStandardTableChange}
             />
             {/* eslint-enable */}
           </div>

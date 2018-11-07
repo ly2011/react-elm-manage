@@ -5,55 +5,72 @@ export default {
   state: {
     list: [],
     currentAdminInfo: {},
-    total: 0,
+    // total: 0,
     pagination: {
       current: 1,
-      pageSize: 10,
+      pageSize: 3,
       showSizeChanger: true,
       showQuickJumper: true,
+      total: 0,
       showTotal: total => `共 ${total} 条数据`
     }
   },
   effects: {
-    *fetch(_, { call, put }) {
-      const { data } = yield call(queryAllAdmin)
+    *fetch({ payload }, { call, put }) {
+      const { currentPage, pageSize } = payload
+      const { data } = yield call(queryAllAdmin, payload)
       yield put({
         type: 'save',
-        payload: data
+        payload: { data, pagination: { currentPage, pageSize } }
       })
     },
     *fetchAdminInfo(_, { call, put }) {
-      const response = yield call(queryAdminInfo)
+      const { data } = yield call(queryAdminInfo)
       yield put({
         type: 'saveAdminInfo',
-        payload: response
+        payload: data
       })
     },
     *fetchAdminCount(_, { call, put }) {
-      const response = yield call(queryAdminCount)
+      const { data } = yield call(queryAdminCount)
+      console.log('fetchAdminCount: ', data)
       yield put({
         type: 'saveAdminCount',
-        payload: response
+        payload: data
       })
     }
   },
   reducers: {
-    save(state, action) {
+    save(state, { payload = {} }) {
+      const { pagination: oldPagination } = state
+      const {
+        data,
+        pagination: { currentPage: current, pageSize }
+      } = payload
       return {
         ...state,
-        list: action.payload || []
+        list: data || [],
+        pagination: {
+          ...oldPagination,
+          current,
+          pageSize
+        }
       }
     },
-    saveAdminInfo(state, action) {
+    saveAdminInfo(state, { payload = {} }) {
       return {
         ...state,
-        currentAdminInfo: action.payload || {}
+        currentAdminInfo: payload || {}
       }
     },
-    saveAdminCount(state, action) {
+    saveAdminCount(state, { payload = 0 }) {
+      const { pagination } = state
       return {
         ...state,
-        total: action.payload || 0
+        pagination: {
+          ...pagination,
+          total: payload || 0
+        }
       }
     }
   }

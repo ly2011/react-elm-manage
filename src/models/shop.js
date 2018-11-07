@@ -14,12 +14,13 @@ export default {
   namespace: 'shop',
   state: {
     list: [],
-    total: 0,
+    // total: 0,
     pagination: {
       current: 1,
       pageSize: 3,
       showSizeChanger: true,
       showQuickJumper: true,
+      total: 0,
       showTotal: total => `共 ${total} 条数据`
     },
     foodCategory: [], // 食品店铺分类
@@ -27,25 +28,27 @@ export default {
     city: {} // 当前城市
   },
   effects: {
-    *fetch(_, { call, put }) {
-      const { data } = yield call(queryShop)
+    *fetch({ payload }, { call, put }) {
+      const { currentPage, pageSize } = payload
+      const { data } = yield call(queryShop, payload)
       yield put({
         type: 'save',
-        payload: data
+        payload: { data, pagination: { currentPage, pageSize } }
       })
     },
     *fetchShopInfo(_, { call, put }) {
-      const response = yield call(queryShopInfo)
+      const { data } = yield call(queryShopInfo)
       yield put({
         type: 'saveShopInfo',
-        payload: response
+        payload: data
       })
     },
     *fetchShopCount(_, { call, put }) {
-      const response = yield call(queryShopCount)
+      const { data } = yield call(queryShopCount)
+      console.log('fetchShopCount: ', data)
       yield put({
         type: 'saveShopCount',
-        payload: response
+        payload: data
       })
     },
     *addShop({ payload }, { call, put }) {
@@ -150,26 +153,39 @@ export default {
     }
   },
   reducers: {
-    save(state, { payload }) {
+    save(state, { payload = {} }) {
+      const { pagination: oldPagination } = state
+      const {
+        data,
+        pagination: { currentPage: current, pageSize }
+      } = payload
       return {
         ...state,
-        list: payload || []
+        list: data || [],
+        pagination: {
+          ...oldPagination,
+          current,
+          pageSize
+        }
       }
     },
-    saveShopInfo(state, { payload }) {
+    saveShopInfo(state, { payload = {} }) {
       return {
         ...state,
         currentShopInfo: payload || {}
       }
     },
-    saveShopCount(state, { payload }) {
+    saveShopCount(state, { payload = 0 }) {
+      const { pagination } = state
       return {
         ...state,
-        total: payload || 0
+        pagination: {
+          ...pagination,
+          total: payload || 0
+        }
       }
     },
     saveAddShop(state, { payload }) {
-      console.log('saveAddShop: ', payload)
       return {
         ...state,
         list: [...state.list, payload]
@@ -183,7 +199,6 @@ export default {
         }
         return shop
       })
-      console.log('updateShop - list: ', list)
       return {
         ...state,
         list

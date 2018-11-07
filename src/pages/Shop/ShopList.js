@@ -96,15 +96,23 @@ class ShopList extends PureComponent {
 
   initData = async () => {
     // 初始化数据
-    const { dispatch } = this.props;
+    const {
+      dispatch,
+      shop: { pagination },
+    } = this.props;
     dispatch({
       type: 'shop/cityGuess',
     });
     dispatch({
       type: 'shop/fetchShopCount',
     });
+    const params = {
+      currentPage: pagination.current,
+      pageSize: pagination.pageSize,
+    };
     dispatch({
       type: 'shop/fetch',
+      payload: params
     });
   };
 
@@ -126,6 +134,7 @@ class ShopList extends PureComponent {
     const { dispatch } = this.props;
     dispatch({
       type: 'shop/fetch',
+      payload: params,
     });
   };
 
