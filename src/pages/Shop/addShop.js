@@ -179,7 +179,7 @@ class addShopPage extends PureComponent {
     const { dispatch, form } = this.props;
     // const { formData } = this.state;
     const formData = deepCopy(this.state.formData); // 改为深度复制
-    form.validateFields((err, fieldsValue) => {
+    form.validateFieldsAndScroll((err, fieldsValue) => {
       console.log('err: ', err, fieldsValue);
       if (err) return;
       try {
@@ -188,13 +188,32 @@ class addShopPage extends PureComponent {
         console.log('activities: ', this.state.activities);
         console.log('formData: ', formData);
         console.log('fieldsValue: ', fieldsValue);
-        dispatch({
-          type: 'shop/addShop',
-          payload: {
-            ...formData,
-            ...fieldsValue,
-          },
-        });
+        new Promise((resolve, reject) => {
+          dispatch({
+            type: 'shop/addShop',
+            payload: {
+              ...formData,
+              ...fieldsValue,
+              resolve,
+            },
+          });
+        })
+          .then(({ success, message }) => {
+            if (success) {
+              message.success('添加商铺成功');
+              // 重置内容
+              this.setState({
+                formData: deepCopy(formData),
+                selectedCategory: deepCopy(selectedCategory),
+                activities: deepCopy(activities),
+              });
+            } else {
+              message.error(message);
+            }
+          })
+          .catch(err => {
+            message.error('添加商铺出错');
+          });
       } catch (err) {
         console.error('添加商铺失败：', err);
       }

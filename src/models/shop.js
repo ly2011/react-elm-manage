@@ -1,4 +1,3 @@
-import { message } from 'antd'
 import {
   queryShop,
   queryShopInfo,
@@ -50,29 +49,38 @@ export default {
       })
     },
     *addShop({ payload }, { call, put }) {
+      const { resolve } = payload
       const { success, message: msg, error_msg } = yield call(addShop, payload)
       if (!success) {
-        message.error(msg || error_msg)
-        return
+        // message.error(msg || error_msg)
+        !!resolve && resolve({ success, message: msg || error_msg })
+      } else {
+        yield put({
+          type: 'saveAddShop',
+          payload
+        })
+        !!resolve && resolve({ success, message: msg || error_msg })
       }
-      yield put({
-        type: 'saveAddShop',
-        payload
-      })
     },
     *updateShop({ payload }, { call, put }) {
+      const { resolve } = payload
       const { success, message: msg, error_msg } = yield call(updateShop, payload)
       if (!success) {
-        message.error(msg || error_msg)
-        return
+        // message.error(msg || error_msg)
+        !!resolve && resolve({ success, message: msg || error_msg })
+      } else {
+        yield put({
+          type: 'saveUpdateShop',
+          payload
+        })
+        !!resolve && resolve({ success, message: msg || error_msg })
       }
-      yield put({
-        type: 'saveUpdateShop',
-        payload
-      })
     },
     *delShop({ payload }, { call, put }) {
-      const response = yield call(delShop, payload)
+      const { resolve } = payload
+      const { success, message: msg, error_msg } = yield call(delShop, payload)
+      if (!success) {
+      }
       yield put({
         type: 'saveDeleteShop',
         payload
