@@ -1,3 +1,4 @@
+import { message } from 'antd'
 import {
   queryShop,
   queryShopInfo,
@@ -49,14 +50,22 @@ export default {
       })
     },
     *addShop({ payload }, { call, put }) {
-      const response = yield call(addShop, payload)
+      const { success, message: msg, error_msg } = yield call(addShop, payload)
+      if (!success) {
+        message.error(msg || error_msg)
+        return
+      }
       yield put({
         type: 'saveAddShop',
         payload
       })
     },
     *updateShop({ payload }, { call, put }) {
-      const response = yield call(updateShop, payload)
+      const { success, message: msg, error_msg } = yield call(updateShop, payload)
+      if (!success) {
+        message.error(msg || error_msg)
+        return
+      }
       yield put({
         type: 'saveUpdateShop',
         payload
@@ -150,6 +159,7 @@ export default {
       }
     },
     saveAddShop(state, { payload }) {
+      console.log('saveAddShop: ', payload)
       return {
         ...state,
         list: [...state.list, payload]

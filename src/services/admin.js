@@ -10,19 +10,19 @@ import { baseApi } from '@/config/env'
  * @param {Object} params
  */
 export async function queryAllAdmin(params = {}) {
-  return request(`${baseApi}/api/admin/all?${stringify(params)}`)
+  return request(`${baseApi}/admin/all?${stringify(params)}`)
 }
 /**
  * 获取管理员信息
  * @param {Object} params
  */
 export async function queryAdminInfo(params = {}) {
-  return request(`${baseApi}/api/admin/info?${stringify(params)}`)
+  return request(`${baseApi}/admin/info?${stringify(params)}`)
 }
 /**
  * 获取管理员数量
  * @param {Object} params
  */
 export async function queryAdminCount(params = {}) {
-  return request(`${baseApi}/api/admin/count?${stringify(params)}`)
+  return request(`${baseApi}/admin/count?${stringify(params)}`)
 }

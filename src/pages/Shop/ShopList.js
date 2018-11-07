@@ -1,5 +1,6 @@
 // 管理员列表
 import React, { PureComponent, Fragment } from 'react';
+import router from 'umi/router';
 import { connect } from 'dva';
 import {
   Card,
@@ -162,9 +163,12 @@ class ShopList extends PureComponent {
   );
 
   showModal = () => {
-    this.setState({
-      modalVisible: true,
-      current: undefined,
+    // this.setState({
+    //   modalVisible: true,
+    //   current: undefined
+    // })
+    router.push({
+      pathname: '/shop/add-shop',
     });
   };
 
@@ -239,11 +243,11 @@ class ShopList extends PureComponent {
 
   deleteShop = id => {
     // 删除店铺
-    message.warning('删除成功');
+    // message.warning('删除成功');
     const { dispatch } = this.props;
     dispatch({
-      type: 'shop/fetch',
-      payload: { id },
+      type: 'shop/delShop',
+      payload: id,
     });
   };
 
@@ -256,10 +260,14 @@ class ShopList extends PureComponent {
 
   handleSearchAddress = value => {
     console.log('handleSearchAddress: ', value);
-    const { dispatch } = this.props;
+    const {
+      dispatch,
+      shop: { city },
+    } = this.props;
     dispatch({
       type: 'shop/searchPlace',
       payload: {
+        city_id: city ? city.id : '',
         keyword: value,
       },
     });
@@ -277,7 +285,7 @@ class ShopList extends PureComponent {
       getBase64(info.file.originFileObj, imageUrl =>
         this.setState({
           imageUrl,
-          loading: false,
+          imageUploadLoading: false,
         })
       );
     }
@@ -395,11 +403,11 @@ class ShopList extends PureComponent {
         <Card bordered={false}>
           <div className={styles.tableList}>
             <div className={styles.tableListForm} />
-            {/* <div className={styles.tableListOperator}>
+            <div className={styles.tableListOperator}>
               <Button icon="plus" type="primary" onClick={this.showModal}>
                 添加
               </Button>
-            </div> */}
+            </div>
             <StandardTable
               className={shopStyles['shop-list-table']}
               rowKey="_id"

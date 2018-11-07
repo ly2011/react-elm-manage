@@ -109,6 +109,7 @@ export default {
   'menu.shop': '店铺管理',
   'menu.shop.adminlist': '管理员列表',
   'menu.shop.shoplist': '店铺列表',
+  'menu.shop.addshop': '添加商铺',
 
   'app.login.message-invalid-credentials': '账户或密码错误（admin/888888）',
   'app.login.message-invalid-verification-code': '验证码错误',
@@ -161,8 +162,7 @@ export default {
   'app.analysis.table.users': '用户数',
   'app.analysis.table.weekly-range': '周涨幅',
   'app.forms.basic.title': '基础表单',
-  'app.forms.basic.description':
-    '表单页用于向用户收集或验证信息，基础表单常见于数据项较少的表单场景。',
+  'app.forms.basic.description': '表单页用于向用户收集或验证信息，基础表单常见于数据项较少的表单场景。',
   'app.monitor.trading-activity': '活动实时交易情况',
   'app.monitor.total-transactions': '今日交易总额',
   'app.monitor.sales-target': '销售目标完成率',
@@ -288,6 +288,5 @@ export default {
   'app.setting.weakmode': '色弱模式',
   'app.setting.copy': '拷贝设置',
   'app.setting.copyinfo': '拷贝成功，请到 src/defaultSettings.js 中替换默认配置',
-  'app.setting.production.hint':
-    '配置栏只在开发环境用于预览，生产环境不会展现，请拷贝后手动修改配置文件',
-};
+  'app.setting.production.hint': '配置栏只在开发环境用于预览，生产环境不会展现，请拷贝后手动修改配置文件'
+}
