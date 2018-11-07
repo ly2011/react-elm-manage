@@ -1,23 +1,23 @@
 // 管理员列表
-import React, { PureComponent } from 'react';
-import { connect } from 'dva';
-import { Card, Form, Table } from 'antd';
+import React, { PureComponent } from 'react'
+import { connect } from 'dva'
+import { Card, Form, Table } from 'antd'
 // import StandardTable from '@/components/StandardTable';
-import PageHeaderWrapper from '@/components/PageHeaderWrapper';
-import styles from '../List/TableList.less';
+import PageHeaderWrapper from '@/components/PageHeaderWrapper'
+import styles from '../List/TableList.less'
 
 /* eslint react/no-multi-comp:0 */
 @connect(({ admin, loading }) => ({
   admin,
-  loading: loading.models.rule,
+  loading: loading.models.admin
 }))
 @Form.create()
 class AdminList extends PureComponent {
   state = {
     // modalVisible: false,
     // updateModalVisible: false,
-    selectedRows: [],
-  };
+    selectedRows: []
+  }
 
   columns = [
     { title: '姓名', dataIndex: 'user_name', align: 'center' },
@@ -26,25 +26,25 @@ class AdminList extends PureComponent {
       dataIndex: 'create_time',
       align: 'center',
       sorter: true,
-      render: val => <span>{val}</span>,
+      render: val => <span>{val}</span>
     },
-    { title: '地址', dataIndex: 'address', align: 'center' },
-  ];
+    { title: '地址', dataIndex: 'address', align: 'center' }
+  ]
 
   componentDidMount() {
     // ajax
-    const { dispatch } = this.props;
+    const { dispatch } = this.props
     dispatch({
-      type: 'admin/fetch',
-    });
+      type: 'admin/fetch'
+    })
   }
 
   onSelectChange = rows => {
     // console.log('rows: ', rows);
     this.setState({
-      selectedRows: rows,
-    });
-  };
+      selectedRows: rows
+    })
+  }
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
     // const { dispatch } = this.props
@@ -58,31 +58,33 @@ class AdminList extends PureComponent {
 
     const params = {
       currentPage: pagination.current,
-      pageSize: pagination.pageSize,
+      pageSize: pagination.pageSize
       // ...formValues,
       // ...filters
-    };
+    }
     if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`;
+      params.sorter = `${sorter.field}_${sorter.order}`
     }
 
-    // console.log('handleStandardTableChange: ', params.sorter)
-
     // 重新拉取数据
-  };
+    const { dispatch } = this.props
+    dispatch({
+      type: 'admin/fetch'
+    })
+  }
 
-  expandedRowRender = record => <p style={{ margin: 0 }}>{record.admin}</p>;
+  expandedRowRender = record => <p style={{ margin: 0 }}>{record.admin}</p>
 
   render() {
     const {
       loading,
-      admin: { list, pagination },
-    } = this.props;
-    const { selectedRows } = this.state;
+      admin: { list, pagination }
+    } = this.props
+    const { selectedRows } = this.state
     const rowSelection = {
       selectedRows,
-      onChange: this.onSelectChange,
-    };
+      onChange: this.onSelectChange
+    }
     return (
       <PageHeaderWrapper title="管理员列表">
         <Card bordered={false}>
@@ -116,11 +118,11 @@ class AdminList extends PureComponent {
           </div>
         </Card>
       </PageHeaderWrapper>
-    );
+    )
   }
 }
 
 /* eslint-disable */
 /* eslint-enable */
 
-export default AdminList;
+export default AdminList

@@ -17,7 +17,7 @@ export default {
     total: 0,
     pagination: {
       current: 1,
-      pageSize: 10,
+      pageSize: 3,
       showSizeChanger: true,
       showQuickJumper: true,
       showTotal: total => `共 ${total} 条数据`
@@ -52,7 +52,6 @@ export default {
       const { resolve } = payload
       const { success, message: msg, error_msg } = yield call(addShop, payload)
       if (!success) {
-        // message.error(msg || error_msg)
         !!resolve && resolve({ success, message: msg || error_msg })
       } else {
         yield put({
@@ -77,20 +76,23 @@ export default {
       }
     },
     *delShop({ payload }, { call, put }) {
-      const { resolve } = payload
-      const { success, message: msg, error_msg } = yield call(delShop, payload)
+      const { resolve, id } = payload
+      const { success, message: msg, error_msg } = yield call(delShop, id)
       if (!success) {
+        !!resolve && resolve({ success, message: msg || error_msg })
+      } else {
+        yield put({
+          type: 'saveDeleteShop',
+          id
+        })
+        !!resolve && resolve({ success, message: msg || error_msg })
       }
-      yield put({
-        type: 'saveDeleteShop',
-        payload
-      })
     },
     *queryFoodCategory(_, { call, put }) {
       const { data: categories, success } = yield call(queryFoodCategory)
       if (success) {
         const categoryOptions = []
-        console.log('queryFoodCategory: ', categories)
+        // console.log('queryFoodCategory: ', categories)
         categories.forEach(item => {
           if (item.sub_categories.length) {
             const addnew = {
@@ -118,7 +120,7 @@ export default {
     },
     *searchPlace({ payload = {} }, { call, put }) {
       const { city_id, keyword } = payload
-      console.log('model - searchPlace: ', payload)
+      // console.log('model - searchPlace: ', payload)
       try {
         const { data: cityList } = yield call(searchPlace, city_id, keyword)
         if (Array.isArray(cityList)) {

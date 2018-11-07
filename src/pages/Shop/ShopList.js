@@ -50,7 +50,7 @@ function beforeUpload(file) {
 /* eslint react/no-multi-comp:0 */
 @connect(({ shop, loading }) => ({
   shop,
-  loading: loading.models.rule,
+  loading: loading.models.shop,
 }))
 @Form.create()
 class ShopList extends PureComponent {
@@ -91,10 +91,6 @@ class ShopList extends PureComponent {
   ];
 
   componentDidMount() {
-    // const { dispatch } = this.props
-    // dispatch({
-    //   type: 'shop/fetch'
-    // })
     this.initData();
   }
 
@@ -127,6 +123,10 @@ class ShopList extends PureComponent {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
     // 重新拉取数据
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'shop/fetch',
+    });
   };
 
   handleSearch = e => {
@@ -163,10 +163,6 @@ class ShopList extends PureComponent {
   );
 
   showModal = () => {
-    // this.setState({
-    //   modalVisible: true,
-    //   current: undefined
-    // })
     router.push({
       pathname: '/shop/add-shop',
     });
@@ -208,7 +204,7 @@ class ShopList extends PureComponent {
     const { dispatch, form } = this.props;
     const { current } = this.state;
     const id = current ? current._id : '';
-    form.validateFields((err, fieldsValue) => {
+    form.validateFieldsAndScroll((err, fieldsValue) => {
       if (err) return;
       try {
         let current = JSON.parse(JSON.stringify(this.state.current));
@@ -217,38 +213,51 @@ class ShopList extends PureComponent {
         current.category = this.state.selectedCategory.join('/');
         console.log('current: ', current);
         console.log('fieldsValue: ', fieldsValue);
-        dispatch({
-          type: 'shop/updateShop',
-          payload: {
-            id,
-            ...current,
-            ...fieldsValue,
-          },
+        new Promise((resolve, reject) => {
+          dispatch({
+            type: 'shop/updateShop',
+            payload: {
+              id,
+              ...current,
+              ...fieldsValue,
+              resolve,
+            },
+          });
+        }).then(({ success, message }) => {
+          if (success) {
+            message.success('更新商铺成功');
+            this.setState({
+              modalVisible: false,
+            });
+          } else {
+            message.error(message);
+          }
         });
-        this.setState({
-          // done: true,
-          modalVisible: false,
-        });
-      } catch (err) {}
-
-      // dispatch({
-      //   type: 'shop/fetch',
-      //   payload: {
-      //     id,
-      //     ...fieldsValue,
-      //   },
-      // });
+      } catch (err) {
+        message.error('更新商铺失败');
+      }
     });
   };
 
   deleteShop = id => {
     // 删除店铺
-    // message.warning('删除成功');
     const { dispatch } = this.props;
-    dispatch({
-      type: 'shop/delShop',
-      payload: id,
-    });
+    new Promise((resolve, reject) => {
+      dispatch({
+        type: 'shop/delShop',
+        payload: { id, resolve },
+      });
+    })
+      .then(({ success, message }) => {
+        if (success) {
+          message.success('删除商铺成功');
+        } else {
+          message.error(message);
+        }
+      })
+      .catch(err => {
+        message.error('删除商铺出错');
+      });
   };
 
   getCategory = () => {
@@ -292,7 +301,7 @@ class ShopList extends PureComponent {
   };
 
   handleSelectCategory = value => {
-    console.log('handleSelectCategory: ', value);
+    // console.log('handleSelectCategory: ', value);
     this.setState({
       selectedCategory: value,
     });

@@ -97,7 +97,7 @@ function beforeUpload(file) {
 /* eslint react/no-multi-comp:0 */
 @connect(({ shop, loading }) => ({
   shop,
-  loading: loading.models.rule,
+  loading: loading.models.shop,
 }))
 @Form.create()
 class addShopPage extends PureComponent {
@@ -323,8 +323,6 @@ class addShopPage extends PureComponent {
         };
         break;
     }
-    // this.activities.push(newObj);
-    // return;
     console.log('activities: ', [...activities, newObj]);
     this.setState({
       modalVisible: false,
@@ -559,9 +557,9 @@ class addShopPage extends PureComponent {
                 </Select>
               )}
             </FormItem>
-            <Table dataSource={activities} columns={this.columns} />
+            <Table rowKey="name" dataSource={activities} columns={this.columns} />
             <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={loading}>
                 立即创建
               </Button>
             </FormItem>
