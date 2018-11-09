@@ -112,7 +112,7 @@ class ShopList extends PureComponent {
     };
     dispatch({
       type: 'shop/fetch',
-      payload: params
+      payload: params,
     });
   };
 
@@ -208,7 +208,8 @@ class ShopList extends PureComponent {
     this.setState({ modalVisible: false });
   };
 
-  handleSubmit = e => {
+  // 更新店铺信息
+  updateShop = e => {
     e.preventDefault();
     const { dispatch, form } = this.props;
     const { current } = this.state;
@@ -276,6 +277,7 @@ class ShopList extends PureComponent {
     });
   };
 
+  // 搜索店铺地址
   handleSearchAddress = value => {
     console.log('handleSearchAddress: ', value);
     const {
@@ -292,6 +294,7 @@ class ShopList extends PureComponent {
   };
 
   handleImageChange = info => {
+    console.log('handleImageChange: ', info);
     if (info.file.status === 'uploading') {
       this.setState({
         imageUploadLoading: true,
@@ -309,11 +312,33 @@ class ShopList extends PureComponent {
     }
   };
 
+  normFile = e => {
+    console.log('Upload event: ', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
   handleSelectCategory = value => {
     // console.log('handleSelectCategory: ', value);
     this.setState({
       selectedCategory: value,
     });
+  };
+
+  // 商铺地址选择
+  handleSelectAddress = (value, option) => {
+    const {
+      shop: { addressList },
+    } = this.props;
+    const newAddress = addressList.find(item => item.address === value);
+    if (newAddress) {
+      const { address, latitude, longitude } = newAddress;
+      this.setState({
+        address: { address, latitude, longitude },
+      });
+    }
   };
 
   render() {
@@ -364,10 +389,7 @@ class ShopList extends PureComponent {
               onPressEnter={value => {
                 console.log('enter', value); // eslint-disable-line
               }}
-              onSelect={value => {
-                const { address, latitude, longitude } = value;
-                this.address = { address, latitude, longitude };
-              }}
+              onSelect={this.handleSelectAddress}
               placeholder="请输入地址"
             >
               {addressList.map(item => (
@@ -381,7 +403,6 @@ class ShopList extends PureComponent {
         </FormItem>
         <FormItem label="店铺介绍" {...formItemLayout}>
           {getFieldDecorator('description', {
-            rules: [{ required: true, message: '请输入店铺介绍' }],
             initialValue: current.description,
           })(<Input placeholder="请输入店铺介绍" />)}
         </FormItem>
@@ -401,7 +422,11 @@ class ShopList extends PureComponent {
           />
         </FormItem>
         <FormItem label="店铺图片" {...formItemLayout}>
-          <Upload
+          {getFieldDecorator('uploadImg', {
+            rules: [{ required: true, message: '请上传店铺头像' }],
+            valuePropName: 'image_path',
+            getValueFromEvent: this.normFile,
+          })(<Upload
             listType="picture-card"
             className={shopStyles['avatar-uploader']}
             showUploadList={false}
@@ -410,11 +435,11 @@ class ShopList extends PureComponent {
             onChange={this.handleImageChange}
           >
             {imageUrl ? <img src={imageUrl} alt="avatar" /> : uploadButton}
-          </Upload>
+          </Upload>)}
         </FormItem>
       </Form>
     );
-    const modalFooter = { onText: '保存', onOk: this.handleSubmit, onCancel: this.handleCancel };
+    const modalFooter = { onText: '保存', onOk: this.updateShop, onCancel: this.handleCancel };
 
     return (
       <PageHeaderWrapper title="店铺列表">

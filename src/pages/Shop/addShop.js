@@ -174,7 +174,7 @@ class addShopPage extends PureComponent {
     });
   };
 
-  handleSubmit = e => {
+  addShop = e => {
     e.preventDefault();
     const { dispatch, form } = this.props;
     // const { formData } = this.state;
@@ -235,18 +235,31 @@ class addShopPage extends PureComponent {
     });
   };
 
-  handleAvatarChange = (type, info) => {
-    const loadingTypes = {
-      image_path: 'shopAvatarUploadLoading',
-      business_license_image: 'businessAvatarUploadLoading',
-      catering_service_license_image: 'serviceAvatarUploadLoading',
-    };
+  // 商铺地址选择
+  handleSelectAddress = value => {
+    const {
+      shop: { addressList },
+    } = this.props;
+    const newAddress = addressList.find(item => item.address === value);
+    if (newAddress) {
+      const formData = deepCopy(this.state.formData);
+      const { address, latitude, longitude } = newAddress;
+      this.setState({
+        formData: {
+          ...formData,
+          address,
+          latitude,
+          longitude,
+        },
+      });
+    }
+  };
+
+  handleShopAvatarChange = info => {
     const { formData } = this.state;
-    console.log('type: ', type, loadingTypes[type]);
-    console.log('formData: ', formData);
     if (info.file.status === 'uploading') {
       this.setState({
-        [loadingTypes[type]]: true,
+        shopAvatarUploadLoading: true,
       });
       return;
     }
@@ -256,9 +269,53 @@ class addShopPage extends PureComponent {
         this.setState({
           formData: {
             ...formData,
-            [type]: imageUrl,
+            image_path: imageUrl,
           },
-          [loadingTypes[type]]: false,
+          shopAvatarUploadLoading: false,
+        });
+      });
+    }
+  };
+
+  handleBusinessAvatarChange = info => {
+    const { formData } = this.state;
+    if (info.file.status === 'uploading') {
+      this.setState({
+        businessAvatarUploadLoading: true,
+      });
+      return;
+    }
+    if (info.file.status === 'done') {
+      // Get this url from response in real world.
+      getBase64(info.file.originFileObj, imageUrl => {
+        this.setState({
+          formData: {
+            ...formData,
+            business_license_image: imageUrl,
+          },
+          businessAvatarUploadLoading: false,
+        });
+      });
+    }
+  };
+
+  handleServiceAvatarChange = info => {
+    const { formData } = this.state;
+    if (info.file.status === 'uploading') {
+      this.setState({
+        serviceAvatarUploadLoading: true,
+      });
+      return;
+    }
+    if (info.file.status === 'done') {
+      // Get this url from response in real world.
+      getBase64(info.file.originFileObj, imageUrl => {
+        this.setState({
+          formData: {
+            ...formData,
+            catering_service_license_image: imageUrl,
+          },
+          serviceAvatarUploadLoading: false,
         });
       });
     }
@@ -339,6 +396,30 @@ class addShopPage extends PureComponent {
     });
   };
 
+  shopAvatarNormFile = e => {
+    console.log('Upload event: ', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
+  businessAvatarNormFile = e => {
+    console.log('Upload event: ', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
+  serviceAvatarNormFile = e => {
+    console.log('Upload event: ', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
   render() {
     const {
       loading,
@@ -383,7 +464,7 @@ class addShopPage extends PureComponent {
     return (
       <PageHeaderWrapper title="添加商铺">
         <Card bordered={false}>
-          <Form onSubmit={this.handleSubmit} style={{ marginTop: 8 }}>
+          <Form onSubmit={this.addShop} style={{ marginTop: 8 }}>
             <FormItem label="店铺名称" {...formItemLayout}>
               {getFieldDecorator('name', {
                 rules: [{ required: true, message: '请输入店铺名称' }],
@@ -407,10 +488,7 @@ class addShopPage extends PureComponent {
                   onPressEnter={value => {
                     console.log('enter', value); // eslint-disable-line
                   }}
-                  onSelect={value => {
-                    const { address, latitude, longitude } = value;
-                    this.address = { address, latitude, longitude };
-                  }}
+                  onSelect={this.handleSelectAddress}
                   placeholder="请输入地址"
                 >
                   {addressList.map(item => (
@@ -430,13 +508,11 @@ class addShopPage extends PureComponent {
             </FormItem>
             <FormItem label="店铺简介" {...formItemLayout}>
               {getFieldDecorator('description', {
-                rules: [{ required: true, message: '请输入店铺介绍' }],
                 initialValue: formData.description,
               })(<Input placeholder="请输入店铺介绍" />)}
             </FormItem>
             <FormItem label="店铺标语" {...formItemLayout}>
               {getFieldDecorator('promotion_info', {
-                rules: [{ required: true, message: '请输入店铺标语' }],
                 initialValue: formData.promotion_info,
               })(<Input placeholder="请输入店铺标语" />)}
             </FormItem>
@@ -496,56 +572,73 @@ class addShopPage extends PureComponent {
               })(<InputNumber placeholder="请输入起送价" min={0} max={100} />)}
             </FormItem>
             <FormItem label="上传店铺头像" {...formItemLayout}>
-              <Upload
-                listType="picture-card"
-                className={shopStyles['avatar-uploader']}
-                showUploadList={false}
-                action={`${baseApi}/shopping/addImg`}
-                beforeUpload={beforeUpload}
-                onChange={info => this.handleAvatarChange('image_path', info)}
-              >
-                {formData.image_path ? (
-                  <img src={formData.image_path} alt="avatar" />
-                ) : (
-                  uploadShopAvatarButton
-                )}
-              </Upload>
+              {getFieldDecorator('uploadShopAvatar', {
+                rules: [{ required: true, message: '请上传店铺头像' }],
+                valuePropName: 'image_path',
+                getValueFromEvent: this.shopAvatarNormFile,
+              })(
+                <Upload
+                  listType="picture-card"
+                  className={shopStyles['avatar-uploader']}
+                  showUploadList={false}
+                  action={`${baseApi}/shopping/addImg`}
+                  beforeUpload={beforeUpload}
+                  onChange={info => this.handleShopAvatarChange(info)}
+                >
+                  {formData.image_path ? (
+                    <img src={formData.image_path} alt="avatar" />
+                  ) : (
+                    uploadShopAvatarButton
+                  )}
+                </Upload>
+              )}
             </FormItem>
             <FormItem label="上传营业执照" {...formItemLayout}>
-              <Upload
-                listType="picture-card"
-                className={shopStyles['avatar-uploader']}
-                showUploadList={false}
-                action={`${baseApi}/shopping/addImg`}
-                beforeUpload={beforeUpload}
-                onChange={info => this.handleAvatarChange('business_license_image', info)}
-              >
-                {formData.business_license_image ? (
-                  <img src={formData.business_license_image} alt="avatar" />
-                ) : (
-                  uploadBusinessAvatarButton
-                )}
-              </Upload>
+              {getFieldDecorator('uploadBusinessAvatar', {
+                rules: [{ required: true, message: '请上传营业执照' }],
+                valuePropName: 'business_license_image',
+                getValueFromEvent: this.businessAvatarNormFile,
+              })(
+                <Upload
+                  listType="picture-card"
+                  className={shopStyles['avatar-uploader']}
+                  showUploadList={false}
+                  action={`${baseApi}/shopping/addImg`}
+                  beforeUpload={beforeUpload}
+                  onChange={info => this.handleBusinessAvatarChange(info)}
+                >
+                  {formData.business_license_image ? (
+                    <img src={formData.business_license_image} alt="avatar" />
+                  ) : (
+                    uploadBusinessAvatarButton
+                  )}
+                </Upload>
+              )}
             </FormItem>
             <FormItem label="上传餐饮服务许可证" {...formItemLayout}>
-              <Upload
-                listType="picture-card"
-                className={shopStyles['avatar-uploader']}
-                showUploadList={false}
-                action={`${baseApi}/shopping/addImg`}
-                beforeUpload={beforeUpload}
-                onChange={info => this.handleAvatarChange('catering_service_license_image', info)}
-              >
-                {formData.catering_service_license_image ? (
-                  <img src={formData.catering_service_license_image} alt="avatar" />
-                ) : (
-                  uploadServiceAvatarButton
-                )}
-              </Upload>
+              {getFieldDecorator('uploadServiceAvatar', {
+                rules: [{ required: true, message: '请上传餐饮服务许可证' }],
+                valuePropName: 'catering_service_license_image',
+                getValueFromEvent: this.serviceAvatarNormFile,
+              })(
+                <Upload
+                  listType="picture-card"
+                  className={shopStyles['avatar-uploader']}
+                  showUploadList={false}
+                  action={`${baseApi}/shopping/addImg`}
+                  beforeUpload={beforeUpload}
+                  onChange={info => this.handleServiceAvatarChange(info)}
+                >
+                  {formData.catering_service_license_image ? (
+                    <img src={formData.catering_service_license_image} alt="avatar" />
+                  ) : (
+                    uploadServiceAvatarButton
+                  )}
+                </Upload>
+              )}
             </FormItem>
             <FormItem label="优惠活动" {...formItemLayout}>
               {getFieldDecorator('activityValue', {
-                rules: [{ required: true, message: '请选择优惠活动' }],
                 initialValue: this.state.activityValue,
               })(
                 <Select placeholder={this.state.activityValue} onChange={this.handleSelectActivity}>
