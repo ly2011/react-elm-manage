@@ -16,7 +16,10 @@ import {
   Modal,
   InputNumber,
   Table,
+  TimePicker,
+  Col,
 } from 'antd';
+import moment from 'moment';
 import { baseApi } from '@/config/env';
 import { deepCopy } from '@/utils/utils';
 import StandardTable from '@/components/StandardTable';
@@ -44,8 +47,10 @@ const submitFormLayout = {
     sm: { span: 10, offset: 7 },
   },
 };
+
+const TimeFormat = 'HH:mm'; // 秒列则会自动消失
 // 原始数据
-const formData = {
+const globalFormData = {
   name: '', // 店铺名称
   address: '', // 地址
   latitude: '',
@@ -105,7 +110,7 @@ class addShopPage extends PureComponent {
     shopAvatarUploadLoading: false, // 店铺头像loading
     businessAvatarUploadLoading: false, // 营业执照loading
     serviceAvatarUploadLoading: false, // 餐饮服务许可证loading
-    formData: deepCopy(formData), // 店铺信息
+    formData: deepCopy(globalFormData), // 店铺信息
     options: [
       {
         value: '满减优惠',
@@ -203,7 +208,7 @@ class addShopPage extends PureComponent {
               message.success('添加商铺成功');
               // 重置内容
               this.setState({
-                formData: deepCopy(formData),
+                formData: deepCopy(globalFormData),
                 selectedCategory: deepCopy(selectedCategory),
                 activities: deepCopy(activities),
               });
@@ -420,6 +425,117 @@ class addShopPage extends PureComponent {
     return e && e.fileList;
   };
 
+  // 营业时间
+  getStartTimeDisabledHours = () => {
+    const hours = [];
+    for (let i = 0; i < 5; i++) {
+      hours.push(i);
+    }
+    return hours;
+  };
+
+  getStartTimeDisabledMinutes = () => {
+    const {
+      form: { getFieldValue },
+    } = this.props;
+    const startTime = getFieldValue('startTime');
+    const minutes = [];
+    if (startTime) {
+      const startHour = moment(startTime).hours();
+      if (startHour === 5) {
+        minutes.push(...[0, 15]);
+      } else if (startHour === 23) {
+        minutes.push(45);
+      }
+    }
+    return minutes;
+  };
+
+  getEndTimeDisabledHours = () => {
+    const {
+      form: { getFieldValue },
+    } = this.props;
+    const hours = [];
+    for (let i = 0; i < 5; i++) {
+      hours.push(i);
+    }
+    const startTime = getFieldValue('startTime');
+    if (startTime) {
+      const startHour = moment(startTime).hours();
+      const startMinute = moment(startTime).minutes();
+      for (let i = startHour - 1; i >= 4; i--) {
+        // 先不考虑临界点的时间
+        hours.push(i);
+      }
+      if (startMinute <= 0) {
+      }
+      if (startMinute >= 45) {
+        // 大于或等于45分钟，则需要将禁止的时间移到下一个小时
+        hours.push(startHour);
+      }
+    }
+
+    return hours;
+  };
+
+  getEndTimeDisabledMinutes = () => {
+    const {
+      form: { getFieldValue },
+    } = this.props;
+    const startTime = getFieldValue('startTime');
+    const endTime = getFieldValue('endTime');
+    const minutes = [];
+    if (startTime) {
+      const startHour = moment(startTime).hours();
+      const startMinute = moment(startTime).minutes();
+      const endHour = moment(endTime).hours();
+      // const endMinute = moment(endTime).minutes()
+      if (startHour === 5) {
+        minutes.push(...[0, 15]);
+      } else if (startHour === 23) {
+        minutes.push(45);
+      }
+
+      // TODO: 待优化
+      if (startHour === endHour) {
+        // if (startMinute <= 0) {
+        //   minutes.push(0)
+        // } else if (startMinute >= 45) {
+        //   minutes.push(45)
+        // }
+        // if (startHour === 5) {
+        //   minutes.push(30)
+        // }
+        // if (startHour === 23) {
+        //   minutes.push(30)
+        // }
+        // if (startHour !== 23) {
+        for (let i = 0; i <= startMinute; i++) {
+          minutes.push(i);
+        }
+        // }
+      }
+    }
+    if (endTime) {
+      const endHour = moment(endTime).hours();
+      if (endHour === 5) {
+        minutes.push(...[0, 15]);
+      } else if (endHour === 23) {
+        minutes.push(45);
+      }
+    }
+    return minutes;
+  };
+
+  handleStartTimeChange = time => {
+    const {
+      form: { resetFields },
+    } = this.props;
+    resetFields(['endTime']); // 选择开始时间的时候，重置结束时间
+  };
+
+  handleEndTimeChange = time => {};
+
   render() {
     const {
       loading,
@@ -570,6 +686,42 @@ class addShopPage extends PureComponent {
                 rules: [{ required: true, message: '请输入起送价' }],
                 initialValue: formData.float_minimum_order_amount,
               })(<InputNumber placeholder="请输入起送价" min={0} max={100} />)}
+            </FormItem>
+            <FormItem label="营业时间" {...formItemLayout}>
+              <Col span={11}>
+                <FormItem>
+                  {getFieldDecorator('startTime')(
+                    <TimePicker
+                      minuteStep={15}
+                      format={TimeFormat}
+                      hideDisabledOptions
+                      onChange={this.handleStartTimeChange}
+                      disabledHours={this.getStartTimeDisabledHours}
+                      disabledMinutes={this.getStartTimeDisabledMinutes}
+                    />
+                  )}
+                </FormItem>
+              </Col>
+              <Col span={2}>
+                <span style={{ display: 'inline-block', width: '100%', textAlign: 'center' }}>
+                  -
+                </span>
+              </Col>
+
+              <Col span={11}>
+                <FormItem>
+                  {getFieldDecorator('endTime')(
+                    <TimePicker
+                      minuteStep={15}
+                      format={TimeFormat}
+                      hideDisabledOptions
+                      onChange={this.handleEndTimeChange}
+                      disabledHours={this.getEndTimeDisabledHours}
+                      disabledMinutes={this.getEndTimeDisabledMinutes}
+                    />
+                  )}
+                </FormItem>
+              </Col>
             </FormItem>
             <FormItem label="上传店铺头像" {...formItemLayout}>
               {getFieldDecorator('uploadShopAvatar', {
