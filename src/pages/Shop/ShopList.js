@@ -47,6 +47,244 @@ function beforeUpload(file) {
   }
   return isJPG && isLt2M;
 }
+
+@connect(({ shop, loading }) => ({
+  shop,
+  loading: loading.models.shop,
+}))
+@Form.create()
+class UpdateForm extends PureComponent {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      imageUrl: '', // 图片地址
+      imageUploadLoading: false,
+      address: {}, // 当前编辑的店铺地址
+      selectedCategory: [], // 当前编辑的分类
+    };
+  }
+
+  componentDidMount() {
+    const {
+      shop: { curShop },
+    } = this.props;
+    const imageUrl = curShop.image_path;
+    const address = curShop.address;
+    const selectedCategory = curShop.category ? curShop.category.split('/') : [];
+    this.setState({
+      address,
+      imageUrl,
+      selectedCategory,
+    });
+  }
+
+  // 搜索店铺地址
+  handleSearchAddress = value => {
+    console.log('handleSearchAddress: ', value);
+    const {
+      dispatch,
+      shop: { city },
+    } = this.props;
+    dispatch({
+      type: 'shop/searchPlace',
+      payload: {
+        city_id: city ? city.id : '',
+        keyword: value,
+      },
+    });
+  };
+
+  handleImageChange = info => {
+    console.log('handleImageChange: ', info);
+    if (info.file.status === 'uploading') {
+      this.setState({
+        imageUploadLoading: true,
+      });
+      return;
+    }
+    if (info.file.status === 'done') {
+      // Get this url from response in real world.
+      getBase64(info.file.originFileObj, imageUrl =>
+        this.setState({
+          imageUrl,
+          imageUploadLoading: false,
+        })
+      );
+    }
+  };
+
+  normFile = e => {
+    console.log('Upload event: ', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
+  handleSelectCategory = value => {
+    this.setState({
+      selectedCategory: value,
+    });
+  };
+
+  // 商铺地址选择
+  handleSelectAddress = (value, option) => {
+    const {
+      shop: { addressList = [] },
+    } = this.props;
+    const newAddress = addressList.find(item => item.address === value);
+    if (newAddress) {
+      const { address, latitude, longitude } = newAddress;
+      this.setState({
+        address: { address, latitude, longitude },
+      });
+    }
+  };
+
+  // 更新店铺信息
+  updateShop = e => {
+    e.preventDefault();
+    const { dispatch, form } = this.props;
+    const {
+      shop: { curShop = {} },
+    } = this.props;
+    const id = curShop ? curShop._id : '';
+    form.validateFieldsAndScroll((err, fieldsValue) => {
+      if (err) return;
+      try {
+        let formData = JSON.parse(JSON.stringify(curShop));
+        formData = { ...formData, ...this.state.address };
+        formData.image_path = this.state.imageUrl;
+        formData.category = this.state.selectedCategory.join('/');
+        console.log('formData: ', formData);
+        console.log('fieldsValue: ', fieldsValue);
+        new Promise((resolve, reject) => {
+          dispatch({
+            type: 'shop/updateShop',
+            payload: {
+              id,
+              ...formData,
+              ...fieldsValue,
+              resolve,
+            },
+          });
+        }).then(({ success, message }) => {
+          if (success) {
+            message.success('更新商铺成功');
+            form.resetFields();
+            dispatch({
+              type: 'shop/setCurShop',
+              payload: { curShop: {} },
+            });
+            this.props.handleOk && this.props.handleOk();
+          } else {
+            message.error(message);
+          }
+        });
+      } catch (err) {
+        message.error('更新商铺失败');
+      }
+    });
+  };
+
+  render() {
+    const {
+      modalVisible,
+      handleCancel,
+      shop: { curShop = {}, addressList = [], city = {}, foodCategory = [] },
+      form: { getFieldDecorator },
+    } = this.props;
+    const { selectedCategory, imageUrl } = this.state;
+    const uploadButton = (
+      <div>
+        <Icon type={this.state.imageUploadLoading ? 'loading' : 'plus'} />
+        <div className="ant-upload-text">Upload</div>
+      </div>
+    );
+    const getModalContent = () => (
+      <Form>
+        <FormItem label="店铺名称" {...formItemLayout}>
+          {getFieldDecorator('name', {
+            rules: [{ required: true, message: '请输入店铺名称' }],
+            initialValue: curShop.name,
+          })(<Input placeholder="请输入" />)}
+        </FormItem>
+        <FormItem label="详细地址" {...formItemLayout}>
+          {getFieldDecorator('address', {
+            rules: [{ required: true, message: '请输入店铺详细地址' }],
+            initialValue: curShop.address,
+          })(
+            <AutoComplete
+              onSearch={this.handleSearchAddress}
+              onSelect={this.handleSelectAddress}
+              placeholder="请输入地址"
+            >
+              {addressList.map(item => (
+                <AutoComplete.Option key={item.address} text={item.address}>
+                  {item.address}
+                </AutoComplete.Option>
+              ))}
+            </AutoComplete>
+          )}
+          <span>当前城市： {city ? city.name : null}</span>
+        </FormItem>
+        <FormItem label="店铺介绍" {...formItemLayout}>
+          {getFieldDecorator('description', {
+            initialValue: curShop.description,
+          })(<Input placeholder="请输入店铺介绍" />)}
+        </FormItem>
+        <FormItem label="联系电话" {...formItemLayout}>
+          {getFieldDecorator('phone', {
+            rules: [{ required: true, message: '请输入联系电话' }],
+            initialValue: curShop.phone,
+          })(<Input placeholder="请输入联系电话" />)}
+        </FormItem>
+        <FormItem label="店铺分类" {...formItemLayout}>
+          <Cascader
+            options={foodCategory}
+            defaultValue={selectedCategory}
+            onChange={this.handleSelectCategory}
+            changeOnSelect
+            placeholder="请选择店铺分类"
+          />
+        </FormItem>
+        <FormItem label="店铺图片" {...formItemLayout}>
+          {getFieldDecorator('imageUrl', {
+            rules: [{ required: true, message: '请上传店铺头像' }],
+            valuePropName: 'image_path',
+            initialValue: imageUrl,
+          })(
+            <Upload
+              listType="picture-card"
+              className={shopStyles['avatar-uploader']}
+              showUploadList={false}
+              action={`${baseApi}/shopping/addImg`}
+              beforeUpload={beforeUpload}
+              onChange={this.handleImageChange}
+            >
+              {imageUrl ? <img src={imageUrl} alt="avatar" /> : uploadButton}
+            </Upload>
+          )}
+        </FormItem>
+      </Form>
+    );
+    const modalFooter = { onText: '保存', onOk: this.updateShop, onCancel: handleCancel };
+    return (
+      <Modal
+        title="店铺编辑"
+        width={640}
+        bodyStyle={{ padding: '28px 0 0' }}
+        destroyOnClose
+        visible={modalVisible}
+        {...modalFooter}
+      >
+        {getModalContent()}
+      </Modal>
+    );
+  }
+}
+
 /* eslint react/no-multi-comp:0 */
 @connect(({ shop, loading }) => ({
   shop,
@@ -58,17 +296,13 @@ class ShopList extends PureComponent {
     modalVisible: false,
     selectedRows: [],
     formValues: {}, // 查询表单数据
-    done: false,
-    current: {}, // 编辑表单数据
-    imageUrl: '', // 图片地址
-    imageUploadLoading: false,
-    address: {}, // 当前编辑的店铺地址
-    selectedCategory: [], // 当前编辑的分类
+    expandForm: false, // 是否是展开查询
   };
 
   columns = [
     { title: '店铺名称', dataIndex: 'name', align: 'center' },
     { title: '店铺地址', dataIndex: 'address', align: 'center' },
+    { title: '联系电话', dataIndex: 'phone', align: 'center' },
     { title: '店铺介绍', dataIndex: 'description', align: 'center' },
     {
       title: '操作',
@@ -138,8 +372,39 @@ class ShopList extends PureComponent {
     });
   };
 
+  // 重置
+  handleFormReset = () => {
+    const { form, dispatch } = this.props;
+    form.resetFields();
+    this.setState({
+      formValues: {},
+    });
+    dispatch({
+      type: 'shop/fetch',
+      payload: {},
+    });
+  };
+
+  toggleForm = () => {
+    const { expandForm } = this.state;
+    this.setState({
+      expandForm: !expandForm,
+    });
+  };
+
   handleSearch = e => {
     e.preventDefault();
+    const { dispatch, form } = this.props;
+    form.validateFields((err, fieldsValue) => {
+      if (err) return;
+
+      this.setState({ formValues: fieldsValue });
+
+      dispatch({
+        type: 'shop/fetch',
+        payload: fieldsValue,
+      });
+    });
   };
 
   expandedRowRender = record => (
@@ -179,74 +444,28 @@ class ShopList extends PureComponent {
 
   showEditModal = record => {
     const {
+      dispatch,
       shop: { foodCategory = [] },
     } = this.props;
     if (!foodCategory.length) {
       this.getCategory();
     }
-    const selectedCategory = record.category ? record.category.split('/') : [];
-    const imageUrl = record ? record.image_path : '';
+    dispatch({
+      type: 'shop/setCurShop',
+      payload: { curShop: record || {} },
+    });
     this.setState({
       modalVisible: true,
-      current: record || {},
-      address: { ...this.state.address, ...{ address: record.address } },
-      selectedCategory,
-      imageUrl,
     });
   };
 
-  handleDone = () => {
-    // 编辑完成
-    this.setState({
-      done: false,
-      modalVisible: false,
-    });
+  handleOk = () => {
+    this.setState({ modalVisible: false });
   };
 
   handleCancel = () => {
     // 取消编辑
     this.setState({ modalVisible: false });
-  };
-
-  // 更新店铺信息
-  updateShop = e => {
-    e.preventDefault();
-    const { dispatch, form } = this.props;
-    const { current } = this.state;
-    const id = current ? current._id : '';
-    form.validateFieldsAndScroll((err, fieldsValue) => {
-      if (err) return;
-      try {
-        let current = JSON.parse(JSON.stringify(this.state.current));
-        current = { ...current, ...this.state.address };
-        current.image_path = this.state.imageUrl;
-        current.category = this.state.selectedCategory.join('/');
-        console.log('current: ', current);
-        console.log('fieldsValue: ', fieldsValue);
-        new Promise((resolve, reject) => {
-          dispatch({
-            type: 'shop/updateShop',
-            payload: {
-              id,
-              ...current,
-              ...fieldsValue,
-              resolve,
-            },
-          });
-        }).then(({ success, message }) => {
-          if (success) {
-            message.success('更新商铺成功');
-            this.setState({
-              modalVisible: false,
-            });
-          } else {
-            message.error(message);
-          }
-        });
-      } catch (err) {
-        message.error('更新商铺失败');
-      }
-    });
   };
 
   deleteShop = id => {
@@ -277,175 +496,99 @@ class ShopList extends PureComponent {
     });
   };
 
-  // 搜索店铺地址
-  handleSearchAddress = value => {
-    console.log('handleSearchAddress: ', value);
+  renderSimpleForm() {
     const {
-      dispatch,
-      shop: { city },
+      form: { getFieldDecorator },
     } = this.props;
-    dispatch({
-      type: 'shop/searchPlace',
-      payload: {
-        city_id: city ? city.id : '',
-        keyword: value,
-      },
-    });
-  };
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
+          <Col md={8} sm={24}>
+            <FormItem label="店铺名称">
+              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="店铺地址">
+              {getFieldDecorator('address')(<Input placeholder="请输入" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <span className={shopStyles.submitButtons}>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+                重置
+              </Button>
+              <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
+                展开 <Icon type="down" />
+              </a>
+            </span>
+          </Col>
+        </Row>
+      </Form>
+    );
+  }
 
-  handleImageChange = info => {
-    console.log('handleImageChange: ', info);
-    if (info.file.status === 'uploading') {
-      this.setState({
-        imageUploadLoading: true,
-      });
-      return;
-    }
-    if (info.file.status === 'done') {
-      // Get this url from response in real world.
-      getBase64(info.file.originFileObj, imageUrl =>
-        this.setState({
-          imageUrl,
-          imageUploadLoading: false,
-        })
-      );
-    }
-  };
-
-  normFile = e => {
-    console.log('Upload event: ', e);
-    if (Array.isArray(e)) {
-      return e;
-    }
-    return e && e.fileList;
-  };
-
-  handleSelectCategory = value => {
-    // console.log('handleSelectCategory: ', value);
-    this.setState({
-      selectedCategory: value,
-    });
-  };
-
-  // 商铺地址选择
-  handleSelectAddress = (value, option) => {
+  renderAdvancedForm() {
     const {
-      shop: { addressList },
+      form: { getFieldDecorator },
     } = this.props;
-    const newAddress = addressList.find(item => item.address === value);
-    if (newAddress) {
-      const { address, latitude, longitude } = newAddress;
-      this.setState({
-        address: { address, latitude, longitude },
-      });
-    }
-  };
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
+          <Col md={8} sm={24}>
+            <FormItem label="店铺名称">
+              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="店铺地址">
+              {getFieldDecorator('address')(<Input placeholder="请输入" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="联系电话">
+              {getFieldDecorator('phone')(<Input placeholder="请输入联系电话" maxLength="11" />)}
+            </FormItem>
+          </Col>
+        </Row>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ float: 'right', marginBottom: 24 }}>
+            <Button type="primary" htmlType="submit">
+              查询
+            </Button>
+            <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+              重置
+            </Button>
+            <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
+              收起 <Icon type="up" />
+            </a>
+          </div>
+        </div>
+      </Form>
+    );
+  }
+
+  renderForm() {
+    const { expandForm } = this.state;
+    return expandForm ? this.renderAdvancedForm() : this.renderSimpleForm();
+  }
 
   render() {
     const {
       loading,
-      shop: { list, pagination, foodCategory, city, addressList },
-      form: { getFieldDecorator },
+      shop: { list, pagination },
     } = this.props;
-    const {
-      selectedRows,
-      modalVisible,
-      done,
-      current = {},
-      imageUploadLoading,
-      imageUrl,
-      selectedCategory,
-    } = this.state;
+    const { selectedRows, modalVisible } = this.state;
     const data = { list, pagination };
-
-    const uploadButton = (
-      <div>
-        <Icon type={this.state.imageUploadLoading ? 'loading' : 'plus'} />
-        <div className="ant-upload-text">Upload</div>
-      </div>
-    );
-    const getModalContent = () => (
-      <Form>
-        <FormItem label="店铺名称" {...formItemLayout}>
-          {getFieldDecorator('name', {
-            rules: [{ required: true, message: '请输入店铺名称' }],
-            initialValue: current.name,
-          })(<Input placeholder="请输入" />)}
-        </FormItem>
-        <FormItem label="详细地址" {...formItemLayout}>
-          {getFieldDecorator('address', {
-            rules: [{ required: true, message: '请输入店铺详细地址' }],
-            initialValue: current.address,
-          })(
-            <AutoComplete
-              className={shopStyles['']}
-              onChange={value => {
-                console.log('change', value); // eslint-disable-line
-              }}
-              onSearch={value => {
-                console.log('input', value); // eslint-disable-line
-                this.handleSearchAddress(value);
-              }}
-              onPressEnter={value => {
-                console.log('enter', value); // eslint-disable-line
-              }}
-              onSelect={this.handleSelectAddress}
-              placeholder="请输入地址"
-            >
-              {addressList.map(item => (
-                <AutoComplete.Option key={item.address} text={item.address}>
-                  {item.address}
-                </AutoComplete.Option>
-              ))}
-            </AutoComplete>
-          )}
-          <span>当前城市： {city ? city.name : null}</span>
-        </FormItem>
-        <FormItem label="店铺介绍" {...formItemLayout}>
-          {getFieldDecorator('description', {
-            initialValue: current.description,
-          })(<Input placeholder="请输入店铺介绍" />)}
-        </FormItem>
-        <FormItem label="联系电话" {...formItemLayout}>
-          {getFieldDecorator('phone', {
-            rules: [{ required: true, message: '请输入联系电话' }],
-            initialValue: current.phone,
-          })(<Input placeholder="请输入联系电话" />)}
-        </FormItem>
-        <FormItem label="店铺分类" {...formItemLayout}>
-          <Cascader
-            options={foodCategory}
-            defaultValue={selectedCategory}
-            onChange={this.handleSelectCategory}
-            changeOnSelect
-            placeholder="请选择店铺分类"
-          />
-        </FormItem>
-        <FormItem label="店铺图片" {...formItemLayout}>
-          {getFieldDecorator('uploadImg', {
-            rules: [{ required: true, message: '请上传店铺头像' }],
-            valuePropName: 'image_path',
-            getValueFromEvent: this.normFile,
-          })(<Upload
-            listType="picture-card"
-            className={shopStyles['avatar-uploader']}
-            showUploadList={false}
-            action={`${baseApi}/shopping/addImg`}
-            beforeUpload={beforeUpload}
-            onChange={this.handleImageChange}
-          >
-            {imageUrl ? <img src={imageUrl} alt="avatar" /> : uploadButton}
-          </Upload>)}
-        </FormItem>
-      </Form>
-    );
-    const modalFooter = { onText: '保存', onOk: this.updateShop, onCancel: this.handleCancel };
 
     return (
       <PageHeaderWrapper title="店铺列表">
         <Card bordered={false}>
           <div className={styles.tableList}>
-            <div className={styles.tableListForm} />
+            <div className={styles.tableListForm}>{this.renderForm()}</div>
             <div className={styles.tableListOperator}>
               <Button icon="plus" type="primary" onClick={this.showModal}>
                 添加
@@ -464,19 +607,13 @@ class ShopList extends PureComponent {
             />
           </div>
         </Card>
-        <Modal
-          title={
-            done ? null : `店铺${current && Object.keys(current).length > 0 ? '编辑' : '添加'}`
-          }
-          className={shopStyles['']}
-          width={640}
-          bodyStyle={done ? { padding: '72px 0' } : { padding: '28px 0 0' }}
-          destroyOnClose
-          visible={modalVisible}
-          {...modalFooter}
-        >
-          {getModalContent()}
-        </Modal>
+        {modalVisible ? (
+          <UpdateForm
+            modalVisible={modalVisible}
+            handleOk={this.handleOk}
+            handleCancel={this.handleCancel}
+          />
+        ) : null}
       </PageHeaderWrapper>
     );
   }

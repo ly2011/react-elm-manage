@@ -14,7 +14,6 @@ export default {
   namespace: 'shop',
   state: {
     list: [],
-    // total: 0,
     pagination: {
       current: 1,
       pageSize: 3,
@@ -25,6 +24,7 @@ export default {
     },
     foodCategory: [], // 食品店铺分类
     addressList: [], // 地址列表
+    curShop: {}, // 当前当铺数据
     city: {} // 当前城市
   },
   effects: {
@@ -45,7 +45,6 @@ export default {
     },
     *fetchShopCount(_, { call, put }) {
       const { data } = yield call(queryShopCount)
-      console.log('fetchShopCount: ', data)
       yield put({
         type: 'saveShopCount',
         payload: data
@@ -150,6 +149,13 @@ export default {
       } catch (error) {
         console.error(error)
       }
+    },
+    *setCurShop({ payload = {} }, { put }) {
+      const { curShop } = payload
+      yield put({
+        type: 'saveCurShop',
+        payload: curShop
+      })
     }
   },
   reducers: {
@@ -229,6 +235,12 @@ export default {
       return {
         ...state,
         city: payload || {}
+      }
+    },
+    saveCurShop(state, { payload }) {
+      return {
+        ...state,
+        curShop: payload
       }
     }
   }
