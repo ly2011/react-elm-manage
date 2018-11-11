@@ -62,7 +62,7 @@ const globalFormData = {
   float_minimum_order_amount: 20, // 起送价
   is_premium: true, // 品牌保证
   delivery_mode: true, // 蜂鸟专送
-  new: true, // 新开店铺
+  is_new: true, // 新开店铺
   bao: true, // 外卖保
   zhun: true, // 准时达
   piao: true, // 开发票
@@ -385,7 +385,7 @@ class addShopPage extends PureComponent {
         };
         break;
     }
-    console.log('activities: ', [...activities, newObj]);
+    // console.log('activities: ', [...activities, newObj]);
     this.setState({
       modalVisible: false,
       acivityDetail: '',
@@ -653,9 +653,9 @@ class addShopPage extends PureComponent {
                 initialValue: formData.delivery_mode,
               })(<Switch />)}
               <span>新开店铺</span>
-              {getFieldDecorator('new', {
+              {getFieldDecorator('is_new', {
                 valuePropName: 'checked',
-                initialValue: formData.new,
+                initialValue: formData.is_new,
               })(<Switch />)}
             </FormItem>
             <FormItem label=" " colon={false} {...formItemLayout}>

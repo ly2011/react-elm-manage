@@ -510,12 +510,12 @@ class ShopList extends PureComponent {
         <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
           <Col md={8} sm={24}>
             <FormItem label="店铺名称">
-              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
+              {getFieldDecorator('name')(<Input placeholder="请输入" autoComplete="off" />)}
             </FormItem>
           </Col>
           <Col md={8} sm={24}>
             <FormItem label="店铺地址">
-              {getFieldDecorator('address')(<Input placeholder="请输入" />)}
+              {getFieldDecorator('address')(<Input placeholder="请输入" autoComplete="off" />)}
             </FormItem>
           </Col>
           <Col md={8} sm={24}>
@@ -545,17 +545,19 @@ class ShopList extends PureComponent {
         <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
           <Col md={8} sm={24}>
             <FormItem label="店铺名称">
-              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
+              {getFieldDecorator('name')(<Input placeholder="请输入" autoComplete="off" />)}
             </FormItem>
           </Col>
           <Col md={8} sm={24}>
             <FormItem label="店铺地址">
-              {getFieldDecorator('address')(<Input placeholder="请输入" />)}
+              {getFieldDecorator('address')(<Input placeholder="请输入" autoComplete="off" />)}
             </FormItem>
           </Col>
           <Col md={8} sm={24}>
             <FormItem label="联系电话">
-              {getFieldDecorator('phone')(<Input placeholder="请输入联系电话" maxLength="11" />)}
+              {getFieldDecorator('phone')(
+                <Input placeholder="请输入联系电话" maxLength="11" autoComplete="off" />
+              )}
             </FormItem>
           </Col>
         </Row>

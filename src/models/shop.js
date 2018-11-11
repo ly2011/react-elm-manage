@@ -36,8 +36,8 @@ export default {
         payload: { data, pagination: { currentPage, pageSize } }
       })
     },
-    *fetchShopInfo(_, { call, put }) {
-      const { data } = yield call(queryShopInfo)
+    *fetchShopInfo({payload}, { call, put }) {
+      const { data } = yield call(queryShopInfo, payload)
       yield put({
         type: 'saveShopInfo',
         payload: data

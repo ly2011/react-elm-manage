@@ -1,10 +1,13 @@
 // 管理员列表
 import React, { PureComponent } from 'react'
 import { connect } from 'dva'
-import { Card, Form, Table } from 'antd'
+import { Card, Form, Table, Row, Col, Button, Input, Icon } from 'antd'
 // import StandardTable from '@/components/StandardTable';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper'
 import styles from '../List/TableList.less'
+import shopStyles from './ShopList.less'
+
+const FormItem = Form.Item
 
 /* eslint react/no-multi-comp:0 */
 @connect(({ admin, loading }) => ({
@@ -33,21 +36,7 @@ class AdminList extends PureComponent {
 
   componentDidMount() {
     // ajax
-    const {
-      dispatch,
-      admin: { pagination }
-    } = this.props
-    dispatch({
-      type: 'admin/fetchAdminCount'
-    })
-    const params = {
-      currentPage: pagination.current,
-      pageSize: pagination.pageSize
-    }
-    dispatch({
-      type: 'admin/fetch',
-      payload: params
-    })
+    this.getTableData()
   }
 
   onSelectChange = rows => {
@@ -56,35 +45,176 @@ class AdminList extends PureComponent {
     })
   }
 
-  handleStandardTableChange = (pagination, filtersArg, sorter) => {
-    // const { dispatch } = this.props
-    // const { formValues } = this.state
+  // 获取店铺列表数据以及分页总数
+  getTableData = (params = {}) => {
+    const {
+      dispatch,
+      admin: { pagination }
+    } = this.props
 
-    // const filters = Object.keys(filtersArg).reduce((obj, key) => {
-    //   const newObj = { ...obj }
-    //   newObj[key] = getValue(filtersArg[key])
-    //   return newObj
-    // }, {})
+    // 获取分页总数
+    const adminCountFormData = { ...params }
+    delete adminCountFormData.currentPage
+    delete adminCountFormData.pageSize
+    dispatch({
+      type: 'admin/fetchAdminCount',
+      payload: adminCountFormData
+    })
 
-    const params = {
+    // 获取店铺列表数据
+    const adminFormData = {
       currentPage: pagination.current,
-      pageSize: pagination.pageSize
-      // ...formValues,
-      // ...filters
+      pageSize: pagination.pageSize,
+      ...params
     }
-    if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`
-    }
-
-    // 重新拉取数据
-    const { dispatch } = this.props
     dispatch({
       type: 'admin/fetch',
-      payload: params
+      payload: adminFormData
     })
   }
 
-  expandedRowRender = record => <p style={{ margin: 0 }}>{record.admin}</p>
+  handleStandardTableChange = (pagination, filtersArg, sorter) => {
+    const { formValues } = this.state
+    const params = {
+      currentPage: pagination.current,
+      pageSize: pagination.pageSize,
+      ...formValues
+      // ...filters
+    }
+    // if (sorter.field) {
+    //   params.sorter = `${sorter.field}_${sorter.order}`
+    // }
+
+    // 重新拉取数据
+    this.getTableData(params)
+  }
+
+  // 重置
+  handleFormReset = () => {
+    const { form, dispatch } = this.props
+    form.resetFields()
+    this.setState({
+      formValues: {}
+    })
+    this.getTableData()
+  }
+
+  toggleForm = () => {
+    const { expandForm } = this.state
+    this.setState({
+      expandForm: !expandForm
+    })
+  }
+
+  handleSearch = e => {
+    e.preventDefault()
+    const { dispatch, form } = this.props
+    form.validateFields((err, fieldsValue) => {
+      if (err) return
+      this.setState({ formValues: fieldsValue })
+      this.getTableData(fieldsValue)
+    })
+  }
+
+  expandedRowRender = record => (
+    <Form layout="inline" className={shopStyles['shop-table-expanded-form']}>
+      <FormItem label="姓名">
+        <span>{record.user_name}</span>
+      </FormItem>
+      <FormItem label="地址">
+        <span>{record.address}</span>
+      </FormItem>
+      <FormItem label="管理员ID">
+        <span>{record._id}</span>
+      </FormItem>
+      <FormItem label="联系电话">
+        <span>{record.phone}</span>
+      </FormItem>
+      <FormItem label="注册时间">
+        <span>{record.create_time}</span>
+      </FormItem>
+    </Form>
+  )
+
+  renderSimpleForm() {
+    const {
+      form: { getFieldDecorator }
+    } = this.props
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
+          <Col md={8} sm={24}>
+            <FormItem label="管理员名称">
+              {getFieldDecorator('user_name')(<Input placeholder="请输入" autoComplete="off" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="地址">
+              {getFieldDecorator('address')(<Input placeholder="请输入" autoComplete="off" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <span className={shopStyles.submitButtons}>
+              <Button type="primary" htmlType="submit">
+                查询
+              </Button>
+              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+                重置
+              </Button>
+              <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
+                展开 <Icon type="down" />
+              </a>
+            </span>
+          </Col>
+        </Row>
+      </Form>
+    )
+  }
+
+  renderAdvancedForm() {
+    const {
+      form: { getFieldDecorator }
+    } = this.props
+    return (
+      <Form onSubmit={this.handleSearch} layout="inline">
+        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
+          <Col md={8} sm={24}>
+            <FormItem label="管理员名称">
+              {getFieldDecorator('user_name')(<Input placeholder="请输入" autoComplete="off" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="地址">
+              {getFieldDecorator('address')(<Input placeholder="请输入" autoComplete="off" />)}
+            </FormItem>
+          </Col>
+          <Col md={8} sm={24}>
+            <FormItem label="注册时间">
+              {getFieldDecorator('create_time')(<Input placeholder="请输入" maxLength="11" autoComplete="off" />)}
+            </FormItem>
+          </Col>
+        </Row>
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{ float: 'right', marginBottom: 24 }}>
+            <Button type="primary" htmlType="submit">
+              查询
+            </Button>
+            <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
+              重置
+            </Button>
+            <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
+              收起 <Icon type="up" />
+            </a>
+          </div>
+        </div>
+      </Form>
+    )
+  }
+
+  renderForm() {
+    const { expandForm } = this.state
+    return expandForm ? this.renderAdvancedForm() : this.renderSimpleForm()
+  }
 
   render() {
     const {
@@ -100,7 +230,7 @@ class AdminList extends PureComponent {
       <PageHeaderWrapper title="管理员列表">
         <Card bordered={false}>
           <div className={styles.tableList}>
-            <div className={styles.tableListForm} />
+            <div className={styles.tableListForm}>{this.renderForm()}</div>
             {/* <div className={styles.tableListOperator}>
               <Button icon="plus" type="primary">
                 新建
@@ -117,6 +247,7 @@ class AdminList extends PureComponent {
             /> */}
             {/* eslint-disable */}
             <Table
+              className={shopStyles['shop-list-table']}
               rowKey={record => record._id}
               rowSelection={rowSelection}
               expandedRowRender={this.expandedRowRender}

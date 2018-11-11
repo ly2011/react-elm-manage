@@ -24,16 +24,16 @@ export default {
         payload: { data, pagination: { currentPage, pageSize } }
       })
     },
-    *fetchAdminInfo(_, { call, put }) {
-      const { data } = yield call(queryAdminInfo)
+    *fetchAdminInfo({ payload }, { call, put }) {
+      const { data } = yield call(queryAdminInfo, payload)
       yield put({
         type: 'saveAdminInfo',
         payload: data
       })
     },
-    *fetchAdminCount(_, { call, put }) {
-      const { data } = yield call(queryAdminCount)
-      console.log('fetchAdminCount: ', data)
+    *fetchAdminCount({ payload }, { call, put }) {
+      const { data } = yield call(queryAdminCount, payload)
+      // console.log('fetchAdminCount: ', data)
       yield put({
         type: 'saveAdminCount',
         payload: data
