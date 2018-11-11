@@ -43,8 +43,8 @@ export default {
         payload: data
       })
     },
-    *fetchShopCount(_, { call, put }) {
-      const { data } = yield call(queryShopCount)
+    *fetchShopCount({payload}, { call, put }) {
+      const { data } = yield call(queryShopCount, payload)
       yield put({
         type: 'saveShopCount',
         payload: data

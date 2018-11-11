@@ -330,23 +330,38 @@ class ShopList extends PureComponent {
 
   initData = async () => {
     // 初始化数据
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'shop/cityGuess',
+    });
+    this.getTableData();
+  };
+
+  // 获取店铺列表数据以及分页总数
+  getTableData = (params = {}) => {
     const {
       dispatch,
       shop: { pagination },
     } = this.props;
-    dispatch({
-      type: 'shop/cityGuess',
-    });
+
+    // 获取分页总数
+    const shopCountFormData = { ...params };
+    delete shopCountFormData.currentPage;
+    delete shopCountFormData.pageSize;
     dispatch({
       type: 'shop/fetchShopCount',
+      payload: shopCountFormData,
     });
-    const params = {
+
+    // 获取店铺列表数据
+    const shopFormData = {
       currentPage: pagination.current,
       pageSize: pagination.pageSize,
+      ...params,
     };
     dispatch({
       type: 'shop/fetch',
-      payload: params,
+      payload: shopFormData,
     });
   };
 
@@ -357,19 +372,17 @@ class ShopList extends PureComponent {
   };
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
+    const { formValues } = this.state;
     const params = {
       currentPage: pagination.current,
       pageSize: pagination.pageSize,
+      ...formValues,
     };
-    if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`;
-    }
+    // if (sorter.field) {
+    //   params.sorter = `${sorter.field}_${sorter.order}`;
+    // }
     // 重新拉取数据
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'shop/fetch',
-      payload: params,
-    });
+    this.getTableData(params);
   };
 
   // 重置
@@ -379,10 +392,7 @@ class ShopList extends PureComponent {
     this.setState({
       formValues: {},
     });
-    dispatch({
-      type: 'shop/fetch',
-      payload: {},
-    });
+    this.getTableData();
   };
 
   toggleForm = () => {
@@ -397,13 +407,8 @@ class ShopList extends PureComponent {
     const { dispatch, form } = this.props;
     form.validateFields((err, fieldsValue) => {
       if (err) return;
-
       this.setState({ formValues: fieldsValue });
-
-      dispatch({
-        type: 'shop/fetch',
-        payload: fieldsValue,
-      });
+      this.getTableData(fieldsValue);
     });
   };
 

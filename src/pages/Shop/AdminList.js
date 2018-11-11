@@ -14,9 +14,9 @@ import styles from '../List/TableList.less'
 @Form.create()
 class AdminList extends PureComponent {
   state = {
-    // modalVisible: false,
-    // updateModalVisible: false,
-    selectedRows: []
+    selectedRows: [],
+    formValues: {}, // 查询表单数据
+    expandForm: false // 是否是展开查询
   }
 
   columns = [
@@ -51,7 +51,6 @@ class AdminList extends PureComponent {
   }
 
   onSelectChange = rows => {
-    // console.log('rows: ', rows);
     this.setState({
       selectedRows: rows
     })
