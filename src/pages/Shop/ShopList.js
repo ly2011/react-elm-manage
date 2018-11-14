@@ -1,4 +1,4 @@
-// 管理员列表
+// 店铺列表
 import React, { PureComponent, Fragment } from 'react';
 import router from 'umi/router';
 import { connect } from 'dva';
@@ -149,7 +149,7 @@ class UpdateForm extends PureComponent {
     const {
       shop: { curShop = {} },
     } = this.props;
-    const id = curShop ? curShop._id : '';
+    const id = curShop ? curShop.id : '';
     form.validateFieldsAndScroll((err, fieldsValue) => {
       if (err) return;
       try {
@@ -314,9 +314,9 @@ class ShopList extends PureComponent {
             编辑
           </Button>
           <Divider type="vertical" />
-          <Button size="small">添加食品</Button>
+          <Button size="small" onClick={() => this.toAddFoodPage(record)}>添加食品</Button>
           <Divider type="vertical" />
-          <Button size="small" type="danger" onClick={() => this.deleteShop(record._id)}>
+          <Button size="small" type="danger" onClick={() => this.deleteShop(record.id)}>
             删除
           </Button>
         </Fragment>
@@ -364,6 +364,13 @@ class ShopList extends PureComponent {
       payload: shopFormData,
     });
   };
+
+  toAddFoodPage = (record) => {
+    router.push({
+      pathname: '/shop/add-food',
+      query: { restaurant_id: record ? record.id : ''}
+    });
+  }
 
   handleSelectRows = rows => {
     this.setState({
@@ -424,7 +431,7 @@ class ShopList extends PureComponent {
         <span>{record.description}</span>
       </FormItem>
       <FormItem label="店铺ID">
-        <span>{record._id}</span>
+        <span>{record.id}</span>
       </FormItem>
       <FormItem label="联系电话">
         <span>{record.phone}</span>
@@ -603,7 +610,7 @@ class ShopList extends PureComponent {
             </div>
             <StandardTable
               className={shopStyles['shop-list-table']}
-              rowKey="_id"
+              rowKey="id"
               selectedRows={selectedRows}
               loading={loading}
               data={data}

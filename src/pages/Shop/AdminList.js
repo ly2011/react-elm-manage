@@ -125,7 +125,7 @@ class AdminList extends PureComponent {
         <span>{record.address}</span>
       </FormItem>
       <FormItem label="管理员ID">
-        <span>{record._id}</span>
+        <span>{record.id}</span>
       </FormItem>
       <FormItem label="联系电话">
         <span>{record.phone}</span>
@@ -248,7 +248,7 @@ class AdminList extends PureComponent {
             {/* eslint-disable */}
             <Table
               className={shopStyles['shop-list-table']}
-              rowKey={record => record._id}
+              rowKey={record => record.id}
               rowSelection={rowSelection}
               expandedRowRender={this.expandedRowRender}
               loading={loading}

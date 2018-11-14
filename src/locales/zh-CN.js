@@ -110,6 +110,7 @@ export default {
   'menu.shop.adminlist': '管理员列表',
   'menu.shop.shoplist': '店铺列表',
   'menu.shop.addshop': '添加商铺',
+  'menu.shop.addfood': '添加食品',
 
   'app.login.message-invalid-credentials': '账户或密码错误（admin/888888）',
   'app.login.message-invalid-verification-code': '验证码错误',

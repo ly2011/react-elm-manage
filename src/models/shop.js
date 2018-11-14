@@ -36,14 +36,14 @@ export default {
         payload: { data, pagination: { currentPage, pageSize } }
       })
     },
-    *fetchShopInfo({payload}, { call, put }) {
+    *fetchShopInfo({ payload }, { call, put }) {
       const { data } = yield call(queryShopInfo, payload)
       yield put({
         type: 'saveShopInfo',
         payload: data
       })
     },
-    *fetchShopCount({payload}, { call, put }) {
+    *fetchShopCount({ payload }, { call, put }) {
       const { data } = yield call(queryShopCount, payload)
       yield put({
         type: 'saveShopCount',
@@ -200,7 +200,7 @@ export default {
     saveUpdateShop(state, { payload }) {
       let { list } = state
       list = list.map(shop => {
-        if (shop._id === payload._id) {
+        if (shop.id === payload.id) {
           return { ...shop, ...payload }
         }
         return shop
@@ -212,7 +212,7 @@ export default {
     },
     saveDeleteShop(state, { payload }) {
       const { list } = state
-      const index = list.findIndex(item => item._id === payload)
+      const index = list.findIndex(item => item.id === payload)
       list.splice(index, 1)
       return {
         ...state,

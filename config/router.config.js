@@ -274,6 +274,11 @@ export default [
             path: '/shop/add-shop',
             name: 'addshop',
             component: './Shop/addShop'
+          },
+          {
+            path: '/shop/add-food',
+            name: 'addfood',
+            component: './Shop/addFood'
           }
         ]
       },

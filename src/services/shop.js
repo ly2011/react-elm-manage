@@ -83,24 +83,3 @@ export async function cityGuess() {
   }
   return request(`${baseApi}/v1/cities?${stringify(params)}`)
 }
-/**
- * 获取当前店铺食品种类
- * @param {String} restaurant_id
- */
-export async function getCategoryById(restaurant_id) {
-  const params = {
-    id: restaurant_id
-  }
-  return request(`${baseApi}/shopping/getCategory/${stringify(params)}`)
-}
-
-/**
- * 添加食品种类
- * @param {Object} params
- */
-export async function addCategory(params = {}) {
-  return request(`${baseApi}/shopping/addCategory`, {
-    method: 'POST',
-    body: params
-  })
-}
