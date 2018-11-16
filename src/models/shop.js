@@ -65,14 +65,14 @@ export default {
     },
     *updateShop({ payload }, { call, put }) {
       const { resolve } = payload
-      const { success, message: msg, error_msg } = yield call(updateShop, payload)
+      const { data, success, message: msg, error_msg } = yield call(updateShop, payload)
       if (!success) {
         // message.error(msg || error_msg)
         !!resolve && resolve({ success, message: msg || error_msg })
       } else {
         yield put({
           type: 'saveUpdateShop',
-          payload
+          payload: data
         })
         !!resolve && resolve({ success, message: msg || error_msg })
       }

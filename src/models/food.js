@@ -40,13 +40,13 @@ export default {
     },
     *addCategory({ payload = {} }, { call, put }) {
       const { resolve } = payload
-      const { success, message: msg, error_msg } = yield call(addCategory, payload)
+      const { data = {}, success, message: msg, error_msg } = yield call(addCategory, payload)
       if (!success) {
         !!resolve && resolve({ success, message: msg || error_msg })
       } else {
         yield put({
           type: 'saveAddCategory',
-          payload
+          payload: data
         })
         !!resolve && resolve({ success, message: msg || error_msg })
       }
@@ -81,14 +81,14 @@ export default {
     },
     *updateFood({ payload }, { call, put }) {
       const { resolve } = payload
-      const { success, message: msg, error_msg } = yield call(updateFood, payload)
+      const { data = {}, success, message: msg, error_msg } = yield call(updateFood, payload)
       if (!success) {
         // message.error(msg || error_msg)
         !!resolve && resolve({ success, message: msg || error_msg })
       } else {
         yield put({
           type: 'saveUpdateFood',
-          payload
+          payload: data
         })
         !!resolve && resolve({ success, message: msg || error_msg })
       }
