@@ -1,150 +1,147 @@
 // 店铺列表
-import React, { PureComponent, Fragment } from 'react'
-import router from 'umi/router'
-import { connect } from 'dva'
-import { Card, Form, Button, Divider, message, Row, Col, Input, Modal, Select, Upload, Icon } from 'antd'
-import { baseApi, baseImgPath } from '@/config/env'
-import StandardTable from '@/components/StandardTable'
-import PageHeaderWrapper from '@/components/PageHeaderWrapper'
-import styles from '../List/TableList.less'
-import shopStyles from './ShopList.less'
+import React, { PureComponent, Fragment } from 'react';
+import router from 'umi/router';
+import { connect } from 'dva';
+import {
+  Card,
+  Form,
+  Button,
+  Divider,
+  message,
+  Row,
+  Col,
+  Input,
+  Modal,
+  Select,
+  Upload,
+  Icon,
+} from 'antd';
+import { baseApi, baseImgPath } from '@/config/env';
+import StandardTable from '@/components/StandardTable';
+import PageHeaderWrapper from '@/components/PageHeaderWrapper';
+import styles from '../List/TableList.less';
+import shopStyles from './ShopList.less';
 
-const FormItem = Form.Item
-const Option = Select.Option
+const FormItem = Form.Item;
+const Option = Select.Option;
 
 const formItemLayout = {
   labelCol: { span: 7 },
-  wrapperCol: { span: 13 }
-}
+  wrapperCol: { span: 13 },
+};
 function getBase64(img, callback) {
-  const reader = new FileReader()
-  reader.addEventListener('load', () => callback(reader.result))
-  reader.readAsDataURL(img)
+  const reader = new FileReader();
+  reader.addEventListener('load', () => callback(reader.result));
+  reader.readAsDataURL(img);
 }
 function beforeUpload(file) {
   // 限制用户上传的图片格式和大小。
-  const isJPG = file.type === 'image/jpeg'
-  const isPNG = file.type === 'image/png'
+  const isJPG = file.type === 'image/jpeg';
+  const isPNG = file.type === 'image/png';
   if (!isJPG && !isPNG) {
-    message.error('只能上传JPG/PNG格式图片！')
+    message.error('只能上传JPG/PNG格式图片！');
   }
-  const isLt2M = file.size / 1024 / 1024 < 2
+  const isLt2M = file.size / 1024 / 1024 < 2;
   if (!isLt2M) {
-    message.error('图片大小不能超过 2MB！')
+    message.error('图片大小不能超过 2MB！');
   }
-  return isJPG && isLt2M
+  return isJPG && isLt2M;
 }
 
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food
+  loading: loading.models.food,
 }))
 @Form.create()
 class UpdateForm extends PureComponent {
   constructor(props) {
-    super(props)
-
+    super(props);
     this.state = {
-      imageUrl: '', // 图片地址
       imageUploadLoading: false,
-      categorySelect: '' // 选中的食品种类
-    }
+      categorySelect: '', // 选中的食品种类
+    };
   }
 
   componentDidMount() {
     const {
-      food: { curFood }
-    } = this.props
-    const imageUrl = curFood.image_path
-    const selectedCategory = curFood.category ? curFood.category.split('/') : []
-    this.setState({
-      imageUrl,
-      selectedCategory
-    })
+      dispatch,
+      food: { curFood, categoryList = [] },
+    } = this.props;
+    const selectable = categoryList.find(item => item.id === curFood.category_id) || {};
+    console.log('select - > ', selectable, curFood, categoryList);
+    dispatch({
+      type: 'food/setSelectedCategoryValue',
+      payload: {
+        selectedCategoryValue: selectable,
+      },
+    });
   }
 
   handleImageChange = info => {
-    console.log('handleImageChange: ', info)
+    const {
+      food: { curFood },
+    } = this.props;
+    console.log('handleImageChange: ', info);
     if (info.file.status === 'uploading') {
       this.setState({
-        imageUploadLoading: true
-      })
-      return
+        imageUploadLoading: true,
+      });
+      return;
     }
     if (info.file.status === 'done') {
       // Get this url from response in real world.
       getBase64(info.file.originFileObj, imageUrl =>
         this.setState({
-          imageUrl,
-          imageUploadLoading: false
+          curFood: { ...curFood, image_path },
+          imageUploadLoading: false,
         })
-      )
+      );
     }
-  }
+  };
 
   normFile = e => {
-    console.log('Upload event: ', e)
     if (Array.isArray(e)) {
-      return e
+      return e;
     }
-    return e && e.fileList
-  }
-  // 获取食品分类
-  getCategory = () => {
-    const { dispatch } = this.props;
-    const { restaurant_id } = this.state;
-    const params = {
-      restaurant_id,
-    };
-    new Promise((resolve, reject) => {
-      dispatch({
-        type: 'food/getCategory',
-        payload: params,
-      });
-    })
-      .then()
-      .catch();
+    return e && e.fileList;
   };
+
   // 选择食品分类
   handleSelectCategory = value => {
     this.setState(
       {
-        categorySelect: value
+        categorySelect: value,
       },
       () => {
         const {
           dispatch,
-          food: { categoryList = [] }
-        } = this.props
-        const selectable = categoryList[value] || {}
-        console.log('select - > ', value, selectable)
+          food: { categoryList = [] },
+        } = this.props;
+        const selectable = categoryList[value] || {};
+        console.log('select - > ', value, selectable);
         dispatch({
           type: 'food/setSelectedCategoryValue',
           payload: {
-            selectedCategoryValue: selectable
-          }
-        })
+            selectedCategoryValue: selectable,
+          },
+        });
       }
-    )
-  }
+    );
+  };
 
   // 更新店铺信息
   updateFood = e => {
-    e.preventDefault()
-    const { dispatch, form } = this.props
+    e.preventDefault();
+    const { dispatch, form } = this.props;
     const {
-      food: { curFood = {} }
-    } = this.props
-    const id = curFood ? curFood.id : ''
+      food: { curFood = {}, selectedCategoryValue, specs: [] },
+    } = this.props;
+    const id = curFood ? curFood.id : '';
+    const new_category_id = selectedCategoryValue ? selectedCategoryValue.id : '';
     form.validateFieldsAndScroll((err, fieldsValue) => {
-      if (err) return
+      if (err) return;
       try {
-        let formData = JSON.parse(JSON.stringify(curFood))
-        formData = { ...formData, ...this.state.address }
-        formData.image_path = this.state.imageUrl
-        formData.category = this.state.selectedCategory.join('/')
-        console.log('formData: ', formData)
-        console.log('fieldsValue: ', fieldsValue)
+        const formData = JSON.parse(JSON.stringify(curFood));
         new Promise((resolve, reject) => {
           dispatch({
             type: 'food/updateFood',
@@ -152,58 +149,59 @@ class UpdateForm extends PureComponent {
               id,
               ...formData,
               ...fieldsValue,
-              resolve
-            }
-          })
+              specs,
+              new_category_id,
+              resolve,
+            },
+          });
         }).then(({ success, message }) => {
           if (success) {
-            message.success('更新食品成功')
-            form.resetFields()
+            message.success('更新食品成功');
+            form.resetFields();
             dispatch({
               type: 'food/setCurFood',
-              payload: { curFood: {} }
-            })
-            this.props.handleOk && this.props.handleOk()
+              payload: { curFood: {} },
+            });
+            this.props.handleOk && this.props.handleOk();
           } else {
-            message.error(message)
+            message.error(message);
           }
-        })
+        });
       } catch (err) {
-        message.error('更新食品失败')
+        message.error('更新食品失败');
       }
-    })
-  }
+    });
+  };
 
   render() {
     const {
       modalVisible,
       handleCancel,
-      food: { curFood = {}, categoryList = [] },
-      form: { getFieldDecorator }
-    } = this.props
-    const { imageUrl } = this.state
+      food: { curFood = {}, selectedCategoryValue, categoryList = [] },
+      form: { getFieldDecorator },
+    } = this.props;
     const uploadButton = (
       <div>
         <Icon type={this.state.imageUploadLoading ? 'loading' : 'plus'} />
         <div className="ant-upload-text">Upload</div>
       </div>
-    )
+    );
     const getModalContent = () => (
       <Form>
         <FormItem label="食品名称" {...formItemLayout}>
           {getFieldDecorator('name', {
             rules: [{ required: true, message: '请输入' }],
-            initialValue: curFood.name
+            initialValue: curFood.name,
           })(<Input placeholder="请输入" />)}
         </FormItem>
         <FormItem label="食品介绍" {...formItemLayout}>
           {getFieldDecorator('description', {
-            initialValue: curFood.description
+            initialValue: curFood.description,
           })(<Input placeholder="请输入" />)}
         </FormItem>
         <FormItem label="食品分类" {...formItemLayout}>
           {getFieldDecorator('categorySelect')(
-            <Select placeholder="" onChange={this.handleSelectCategory}>
+            <Select placeholder={selectedCategoryValue.name} onChange={this.handleSelectCategory}>
               {categoryList.map((item, index) => (
                 <Option key={index} value={index}>
                   {item.name}
@@ -213,10 +211,10 @@ class UpdateForm extends PureComponent {
           )}
         </FormItem>
         <FormItem label="店铺图片" {...formItemLayout}>
-          {getFieldDecorator('imageUrl', {
+          {getFieldDecorator('image_path', {
             rules: [{ required: true, message: '请上传店铺头像' }],
             valuePropName: 'image_path',
-            initialValue: imageUrl
+            initialValue: curFood.image_path,
           })(
             <Upload
               listType="picture-card"
@@ -226,13 +224,13 @@ class UpdateForm extends PureComponent {
               beforeUpload={beforeUpload}
               onChange={this.handleImageChange}
             >
-              {imageUrl ? <img src={imageUrl} alt="avatar" /> : uploadButton}
+              {curFood.image_path ? <img src={curFood.image_path} alt="avatar" /> : uploadButton}
             </Upload>
           )}
         </FormItem>
       </Form>
-    )
-    const modalFooter = { onText: '保存', onOk: this.updateFood, onCancel: handleCancel }
+    );
+    const modalFooter = { onText: '保存', onOk: this.updateFood, onCancel: handleCancel };
     return (
       <Modal
         title="店铺编辑"
@@ -244,7 +242,7 @@ class UpdateForm extends PureComponent {
       >
         {getModalContent()}
       </Modal>
-    )
+    );
   }
 }
 
@@ -253,7 +251,7 @@ class UpdateForm extends PureComponent {
  */
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food
+  loading: loading.models.food,
 }))
 @Form.create()
 class SpecsForm extends PureComponent {
@@ -261,61 +259,61 @@ class SpecsForm extends PureComponent {
     formData: {
       specs: '',
       packing_fee: 0,
-      price: 20
-    }
-  }
+      price: 20,
+    },
+  };
 
   addSpecs = e => {
-    e.preventDefault()
-    const { handleOk, form } = this.props
+    e.preventDefault();
+    const { handleOk, form } = this.props;
     form.validateFieldsAndScroll((err, fieldsValue) => {
-      console.log('err: ', err, fieldsValue)
-      if (err) return
+      console.log('err: ', err, fieldsValue);
+      if (err) return;
       this.setState({
         formData: {
           specs: '',
           packing_fee: 0,
-          price: 20
-        }
-      })
-      handleOk && handleOk(fieldsValue)
-    })
-  }
+          price: 20,
+        },
+      });
+      handleOk && handleOk(fieldsValue);
+    });
+  };
 
   getModalContent = () => {
     const {
-      form: { getFieldDecorator }
-    } = this.props
-    const { formData } = this.state
+      form: { getFieldDecorator },
+    } = this.props;
+    const { formData } = this.state;
     return (
       <Form onSubmit={this.addSpecs}>
         <FormItem label="规格" {...formItemLayout}>
           {getFieldDecorator('specs', {
             rules: [{ required: true, message: '请输入规格' }],
-            initialValue: formData.specs
+            initialValue: formData.specs,
           })(<Input placeholder="请输入" autoComplete="off" />)}
         </FormItem>
         <FormItem label="包装费" {...formItemLayout}>
           {getFieldDecorator('packing_fee', {
-            initialValue: formData.packing_fee
+            initialValue: formData.packing_fee,
           })(<InputNumber min={0} max={100} />)}
         </FormItem>
         <FormItem label="价格" {...formItemLayout}>
           {getFieldDecorator('price', {
-            initialValue: formData.price
+            initialValue: formData.price,
           })(<InputNumber min={0} max={10000} />)}
         </FormItem>
       </Form>
-    )
-  }
+    );
+  };
 
   render() {
     const {
       modalVisible,
       handleCancel,
-      form: { getFieldDecorator }
-    } = this.props
-    const modalFooter = { onText: '确定', onOk: this.addSpecs, onCancel: handleCancel }
+      form: { getFieldDecorator },
+    } = this.props;
+    const modalFooter = { onText: '确定', onOk: this.addSpecs, onCancel: handleCancel };
     return (
       <Modal
         title="添加规格"
@@ -327,14 +325,14 @@ class SpecsForm extends PureComponent {
       >
         {this.getModalContent()}
       </Modal>
-    )
+    );
   }
 }
 
 /* eslint react/no-multi-comp:0 */
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food
+  loading: loading.models.food,
 }))
 @Form.create()
 class FoodList extends PureComponent {
@@ -343,8 +341,8 @@ class FoodList extends PureComponent {
     specsFormVisible: false,
     selectedRows: [],
     formValues: {}, // 查询表单数据
-    expandForm: false // 是否是展开查询
-  }
+    expandForm: false, // 是否是展开查询
+  };
 
   columns = [
     { title: '食品名称', dataIndex: 'name', align: 'center' },
@@ -364,93 +362,93 @@ class FoodList extends PureComponent {
             删除
           </Button>
         </Fragment>
-      )
-    }
-  ]
+      ),
+    },
+  ];
 
   componentDidMount() {
-    this.initData()
+    this.initData();
   }
 
   initData = async () => {
     // 初始化数据
-    this.getTableData()
-  }
+    this.getTableData();
+  };
 
   // 获取店铺列表数据以及分页总数
   getTableData = (params = {}) => {
     const {
       dispatch,
-      food: { pagination }
-    } = this.props
+      food: { pagination },
+    } = this.props;
 
     // 获取分页总数
-    const foodCountFormData = { ...params }
-    delete foodCountFormData.currentPage
-    delete foodCountFormData.pageSize
+    const foodCountFormData = { ...params };
+    delete foodCountFormData.currentPage;
+    delete foodCountFormData.pageSize;
     dispatch({
       type: 'food/fetchFoodCount',
-      payload: foodCountFormData
-    })
+      payload: foodCountFormData,
+    });
 
     // 获取店铺列表数据
     const foodFormData = {
       currentPage: pagination.current,
       pageSize: pagination.pageSize,
-      ...params
-    }
+      ...params,
+    };
     dispatch({
       type: 'food/fetch',
-      payload: foodFormData
-    })
-  }
+      payload: foodFormData,
+    });
+  };
 
   handleSelectRows = rows => {
     this.setState({
-      selectedRows: rows
-    })
-  }
+      selectedRows: rows,
+    });
+  };
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
-    const { formValues } = this.state
+    const { formValues } = this.state;
     const params = {
       currentPage: pagination.current,
       pageSize: pagination.pageSize,
-      ...formValues
-    }
+      ...formValues,
+    };
     // if (sorter.field) {
     //   params.sorter = `${sorter.field}_${sorter.order}`;
     // }
     // 重新拉取数据
-    this.getTableData(params)
-  }
+    this.getTableData(params);
+  };
 
   // 重置
   handleFormReset = () => {
-    const { form, dispatch } = this.props
-    form.resetFields()
+    const { form, dispatch } = this.props;
+    form.resetFields();
     this.setState({
-      formValues: {}
-    })
-    this.getTableData()
-  }
+      formValues: {},
+    });
+    this.getTableData();
+  };
 
   toggleForm = () => {
-    const { expandForm } = this.state
+    const { expandForm } = this.state;
     this.setState({
-      expandForm: !expandForm
-    })
-  }
+      expandForm: !expandForm,
+    });
+  };
 
   handleSearch = e => {
-    e.preventDefault()
-    const { dispatch, form } = this.props
+    e.preventDefault();
+    const { dispatch, form } = this.props;
     form.validateFields((err, fieldsValue) => {
-      if (err) return
-      this.setState({ formValues: fieldsValue })
-      this.getTableData(fieldsValue)
-    })
-  }
+      if (err) return;
+      this.setState({ formValues: fieldsValue });
+      this.getTableData(fieldsValue);
+    });
+  };
 
   expandedRowRender = record => (
     <Form layout="inline" className={shopStyles['shop-table-expanded-form']}>
@@ -479,66 +477,66 @@ class FoodList extends PureComponent {
         <span>{record.month_sales}</span>
       </FormItem>
     </Form>
-  )
+  );
 
   showEditModal = record => {
     const {
       dispatch,
-      food: { foodCategory = [] }
-    } = this.props
-    if (!foodCategory.length) {
-      this.getCategory()
+      food: { categoryList = [] },
+    } = this.props;
+    if (!categoryList.length) {
+      this.getCategory(record.restaurant_id);
     }
     dispatch({
       type: 'food/setCurFood',
-      payload: { curFood: record || {} }
-    })
+      payload: { curFood: record || {} },
+    });
     this.setState({
-      modalVisible: true
-    })
-  }
+      modalVisible: true,
+    });
+  };
 
   handleOk = () => {
-    this.setState({ modalVisible: false })
-  }
+    this.setState({ modalVisible: false });
+  };
 
   handleCancel = () => {
     // 取消编辑
-    this.setState({ modalVisible: false })
-  }
+    this.setState({ modalVisible: false });
+  };
 
   deleteFood = id => {
     // 删除店铺
-    const { dispatch } = this.props
+    const { dispatch } = this.props;
     new Promise((resolve, reject) => {
       dispatch({
         type: 'food/delFood',
-        payload: { id, resolve }
-      })
+        payload: { id, resolve },
+      });
     })
       .then(({ success, message }) => {
         if (success) {
-          message.success('删除食品成功')
+          message.success('删除食品成功');
         } else {
-          message.error(message)
+          message.error(message);
         }
       })
       .catch(err => {
-        message.error('删除食品出错')
-      })
-  }
+        message.error('删除食品出错');
+      });
+  };
 
   getCategory = () => {
-    const { dispatch } = this.props
+    const { dispatch } = this.props;
     dispatch({
-      type: 'food/getCategory'
-    })
-  }
+      type: 'food/getCategory',
+    });
+  };
 
   renderSimpleForm() {
     const {
-      form: { getFieldDecorator }
-    } = this.props
+      form: { getFieldDecorator },
+    } = this.props;
     return (
       <Form onSubmit={this.handleSearch} layout="inline">
         <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
@@ -562,13 +560,13 @@ class FoodList extends PureComponent {
           </Col>
         </Row>
       </Form>
-    )
+    );
   }
 
   renderAdvancedForm() {
     const {
-      form: { getFieldDecorator }
-    } = this.props
+      form: { getFieldDecorator },
+    } = this.props;
     return (
       <Form onSubmit={this.handleSearch} layout="inline">
         <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
@@ -579,7 +577,9 @@ class FoodList extends PureComponent {
           </Col>
           <Col md={8} sm={24}>
             <FormItem label="餐馆名称">
-              {getFieldDecorator('restaurant_name')(<Input placeholder="请输入" autoComplete="off" />)}
+              {getFieldDecorator('restaurant_name')(
+                <Input placeholder="请输入" autoComplete="off" />
+              )}
             </FormItem>
           </Col>
         </Row>
@@ -597,60 +597,70 @@ class FoodList extends PureComponent {
           </div>
         </div>
       </Form>
-    )
+    );
   }
 
   renderForm() {
-    const { expandForm } = this.state
-    return expandForm ? this.renderAdvancedForm() : this.renderSimpleForm()
+    const { expandForm } = this.state;
+    return expandForm ? this.renderAdvancedForm() : this.renderSimpleForm();
   }
 
   // 删除规格
   handleDeleteFoodSpecs = index => {
-    const { formData } = this.state
-    const specs = deepCopy(this.state.formData.specs)
-    specs.splice(index, 1)
-    this.setState({
-      formData: {
-        ...formData,
-        specs
-      }
-    })
-  }
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'food/delSpecs',
+      payload: { index },
+    });
+    // const { formData } = this.state;
+    // const specs = deepCopy(this.state.formData.specs);
+    // specs.splice(index, 1);
+    // this.setState({
+    //   formData: {
+    //     ...formData,
+    //     specs,
+    //   },
+    // });
+  };
 
   // 添加规格
   handleAddFoodSpecsOk = (params = {}) => {
-    const { formData } = this.state
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'food/setSpecs',
+      payload: { specs: params || {} },
+    });
+    // const { formData } = this.state;
     this.setState({
-      formData: {
-        ...formData,
-        specs: [...this.state.formData.specs, params]
-      },
-      specsFormVisible: false
-    })
-  }
+      // formData: {
+      //   ...formData,
+      //   specs: [...this.state.formData.specs, params],
+      // },
+      specsFormVisible: false,
+    });
+  };
 
   // 取消添加规格
   handleAddFoodSpecsCancel = () => {
     this.setState({
-      specsFormVisible: false
-    })
-  }
+      specsFormVisible: false,
+    });
+  };
 
   // 打开添加规格的弹框
   openAddFoodSpecsModal = () => {
     this.setState({
-      specsFormVisible: true
-    })
-  }
+      specsFormVisible: true,
+    });
+  };
 
   render() {
     const {
       loading,
-      food: { list, pagination }
-    } = this.props
-    const { selectedRows, modalVisible, specsFormVisible } = this.state
-    const data = { list, pagination }
+      food: { list, pagination },
+    } = this.props;
+    const { selectedRows, modalVisible, specsFormVisible } = this.state;
+    const data = { list, pagination };
 
     return (
       <PageHeaderWrapper title="食品列表">
@@ -672,7 +682,11 @@ class FoodList extends PureComponent {
           </div>
         </Card>
         {modalVisible ? (
-          <UpdateForm modalVisible={modalVisible} handleOk={this.handleOk} handleCancel={this.handleCancel} />
+          <UpdateForm
+            modalVisible={modalVisible}
+            handleOk={this.handleOk}
+            handleCancel={this.handleCancel}
+          />
         ) : null}
         {specsFormVisible ? (
           <SpecsForm
@@ -682,8 +696,8 @@ class FoodList extends PureComponent {
           />
         ) : null}
       </PageHeaderWrapper>
-    )
+    );
   }
 }
 
-export default FoodList
+export default FoodList;

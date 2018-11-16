@@ -25,7 +25,8 @@ export default {
         value: '招牌',
         label: '招牌'
       }
-    ] // 食品特点
+    ], // 食品特点
+    specs: [] // 规格
   },
   effects: {
     *getCategory({ payload = {} }, { call, put }) {
@@ -119,6 +120,23 @@ export default {
         type: 'saveSelectedCategoryValue',
         payload: selectedCategoryValue
       })
+    },
+    *setSpecs({ payload = {} }, { put }) {
+      const { specs } = payload
+      yield put({
+        type: 'saveSpecs',
+        payload: specs
+      })
+    },
+    *delSpecs({ payload = {} }, { put }) {
+      const { index, type = '' } = payload
+      // 是否是清空操作
+      if (type === 'clear') {
+      }
+      yield put({
+        type: 'saveDeleteSpecs',
+        payload: []
+      })
     }
   },
   reducers: {
@@ -198,6 +216,18 @@ export default {
       return {
         ...state,
         selectedCategoryValue: payload
+      }
+    },
+    saveSpecs(state, { payload }) {
+      return {
+        ...state,
+        specs: [...state.specs, payload]
+      }
+    },
+    saveDeleteSpecs(state, { payload }) {
+      return {
+        ...state,
+        specs: payload
       }
     }
   }
