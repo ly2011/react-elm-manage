@@ -212,6 +212,7 @@ class addShopPage extends PureComponent {
                 selectedCategory: deepCopy(selectedCategory),
                 activities: deepCopy(activities),
               });
+              form.resetFields();
             } else {
               message.error(message);
             }

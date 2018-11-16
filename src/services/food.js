@@ -41,7 +41,7 @@ export async function addFood(params = {}) {
  * @param {object} params
  */
 export async function getFoods(params = {}) {
-  return request(`${baseApi}/shopping/foods?${stringify(params)}`)
+  return request(`${baseApi}/shopping/getFoods?${stringify(params)}`)
 }
 
 /**
@@ -49,14 +49,14 @@ export async function getFoods(params = {}) {
  * @param {object} params
  */
 export async function getFoodsCount(params = {}) {
-  return request(`${baseApi}/shopping/foods/count?${stringify(params)}`)
+  return request(`${baseApi}/shopping/getFoodsCount?${stringify(params)}`)
 }
 
 /**
  * 更新食品信息
  * @param {object} params
  */
-export async function updateFoods(params = {}) {
+export async function updateFood(params = {}) {
   return request(`${baseApi}/shopping/updateFood`, {
     method: 'POST',
     body: params

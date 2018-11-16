@@ -271,6 +271,11 @@ export default [
             component: './Shop/ShopList'
           },
           {
+            path: '/shop/food-list',
+            name: 'foodlist',
+            component: './Shop/FoodList'
+          },
+          {
             path: '/shop/add-shop',
             name: 'addshop',
             component: './Shop/addShop'

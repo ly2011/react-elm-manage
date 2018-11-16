@@ -109,6 +109,7 @@ export default {
   'menu.shop': '店铺管理',
   'menu.shop.adminlist': '管理员列表',
   'menu.shop.shoplist': '店铺列表',
+  'menu.shop.foodlist': '食品列表',
   'menu.shop.addshop': '添加商铺',
   'menu.shop.addfood': '添加食品',
 

@@ -128,7 +128,7 @@ class AddCategoryForm extends PureComponent {
     form.validateFieldsAndScroll((err, fieldsValue) => {
       if (err) return;
       try {
-        console.log('fieldsValue: ', fieldsValue);
+        // console.log('fieldsValue: ', fieldsValue);
         new Promise((resolve, reject) => {
           dispatch({
             type: 'food/addCategory',

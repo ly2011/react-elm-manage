@@ -1,4 +1,4 @@
-import { getCategory, addCategory, queryShop, getFoodsCount, addFood, updateFood, deleteFood } from '@/services/food'
+import { getCategory, addCategory, getFoods, getFoodsCount, addFood, updateFood, deleteFood } from '@/services/food'
 
 export default {
   namespace: 'food',
@@ -53,7 +53,7 @@ export default {
     },
     *fetch({ payload }, { call, put }) {
       const { currentPage, pageSize } = payload
-      const { data } = yield call(queryShop, payload)
+      const { data } = yield call(getFoods, payload)
       yield put({
         type: 'save',
         payload: { data, pagination: { currentPage, pageSize } }
@@ -106,10 +106,10 @@ export default {
         !!resolve && resolve({ success, message: msg || error_msg })
       }
     },
-    *setCurShop({ payload = {} }, { put }) {
+    *setCurFood({ payload = {} }, { put }) {
       const { curFood } = payload
       yield put({
-        type: 'saveCurShop',
+        type: 'saveCurFood',
         payload: curFood
       })
     },
