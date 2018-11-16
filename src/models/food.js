@@ -15,6 +15,7 @@ export default {
     categoryList: [], // 获取当前店铺食品种类
     curCategory: {}, // 当前店铺食品分类
     curFood: {}, // 当前当铺数据
+    selectedCategoryValue: {}, // 选中的食品种类
     attributes: [
       {
         value: '新',
@@ -67,13 +68,13 @@ export default {
     },
     *addFood({ payload }, { call, put }) {
       const { resolve } = payload
-      const { success, message: msg, error_msg } = yield call(addFood, payload)
+      const { data = {}, success, message: msg, error_msg } = yield call(addFood, payload)
       if (!success) {
         !!resolve && resolve({ success, message: msg || error_msg })
       } else {
         yield put({
           type: 'saveAddFood',
-          payload
+          payload: data
         })
         !!resolve && resolve({ success, message: msg || error_msg })
       }
@@ -110,6 +111,13 @@ export default {
       yield put({
         type: 'saveCurShop',
         payload: curFood
+      })
+    },
+    *setSelectedCategoryValue({ payload = {} }, { put }) {
+      const { selectedCategoryValue = {} } = payload
+      yield put({
+        type: 'saveSelectedCategoryValue',
+        payload: selectedCategoryValue
       })
     }
   },
@@ -184,6 +192,12 @@ export default {
       return {
         ...state,
         curFood: payload
+      }
+    },
+    saveSelectedCategoryValue(state, { payload }) {
+      return {
+        ...state,
+        selectedCategoryValue: payload
       }
     }
   }

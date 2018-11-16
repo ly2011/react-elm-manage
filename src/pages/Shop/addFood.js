@@ -1,7 +1,7 @@
 // 添加食品
-import React, { PureComponent, Fragment } from 'react';
-import router from 'umi/router';
-import { connect } from 'dva';
+import React, { PureComponent, Fragment } from 'react'
+import router from 'umi/router'
+import { connect } from 'dva'
 import {
   Form,
   Card,
@@ -16,38 +16,38 @@ import {
   Table,
   Row,
   Col,
-  Radio,
-} from 'antd';
-import moment from 'moment';
-import { baseApi } from '@/config/env';
-import { deepCopy } from '@/utils/utils';
-import StandardTable from '@/components/StandardTable';
-import PageHeaderWrapper from '@/components/PageHeaderWrapper';
-import shopStyles from './ShopList.less';
+  Radio
+} from 'antd'
+import moment from 'moment'
+import { baseApi } from '@/config/env'
+import { deepCopy } from '@/utils/utils'
+import StandardTable from '@/components/StandardTable'
+import PageHeaderWrapper from '@/components/PageHeaderWrapper'
+import shopStyles from './ShopList.less'
 
-const FormItem = Form.Item;
-const Option = Select.Option;
-const RadioGroup = Radio.Group;
-const confirm = Modal.confirm;
+const FormItem = Form.Item
+const Option = Select.Option
+const RadioGroup = Radio.Group
+const confirm = Modal.confirm
 
 const formItemLayout = {
   labelCol: {
     xs: { span: 24 },
-    sm: { span: 7 },
+    sm: { span: 7 }
   },
   wrapperCol: {
     xs: { span: 24 },
     sm: { span: 12 },
-    md: { span: 10 },
-  },
-};
+    md: { span: 10 }
+  }
+}
 
 const submitFormLayout = {
   wrapperCol: {
     xs: { span: 24, offset: 0 },
-    sm: { span: 10, offset: 7 },
-  },
-};
+    sm: { span: 10, offset: 7 }
+  }
+}
 const globalFormData = {
   name: '',
   description: '',
@@ -59,107 +59,122 @@ const globalFormData = {
       // 食品规格
       specs: '默认',
       packing_fee: 0,
-      price: 20,
-    },
-  ],
-};
+      price: 20
+    }
+  ]
+}
 function getBase64(img, callback) {
-  const reader = new FileReader();
-  reader.addEventListener('load', () => callback(reader.result));
-  reader.readAsDataURL(img);
+  const reader = new FileReader()
+  reader.addEventListener('load', () => callback(reader.result))
+  reader.readAsDataURL(img)
 }
 function beforeUpload(file) {
   // 限制用户上传的图片格式和大小。
-  const isJPG = file.type === 'image/jpeg';
-  const isPNG = file.type === 'image/png';
+  const isJPG = file.type === 'image/jpeg'
+  const isPNG = file.type === 'image/png'
   if (!isJPG && !isPNG) {
-    message.error('只能上传JPG/PNG格式图片！');
+    message.error('只能上传JPG/PNG格式图片！')
   }
-  const isLt2M = file.size / 1024 / 1024 < 2;
+  const isLt2M = file.size / 1024 / 1024 < 2
   if (!isLt2M) {
-    message.error('图片大小不能超过 2MB！');
+    message.error('图片大小不能超过 2MB！')
   }
-  return isJPG && isLt2M;
+  return isJPG && isLt2M
 }
 
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food,
+  loading: loading.models.food
 }))
 @Form.create()
 class AddCategoryForm extends PureComponent {
   state = {
     loading: false,
     categorySelect: '', // 选中的食品种类
-    showAddCategory: false, // 是否显示添加食品种类form
-  };
+    showAddCategory: false // 是否显示添加食品种类form
+  }
 
   handleSelectCategory = value => {
-    this.setState({
-      categorySelect: value,
-    });
-  };
+    this.setState(
+      {
+        categorySelect: value
+      },
+      () => {
+        const {
+          dispatch,
+          food: { categoryList = [] }
+        } = this.props
+        const selectable = categoryList[value] || {}
+        console.log('select - > ', value, selectable)
+        dispatch({
+          type: 'food/setSelectedCategoryValue',
+          payload: {
+            selectedCategoryValue: selectable
+          }
+        })
+      }
+    )
+  }
 
   changeIsShowCategory = () => {
     this.setState({
-      showAddCategory: !this.state.showAddCategory,
-    });
-  };
+      showAddCategory: !this.state.showAddCategory
+    })
+  }
 
   addCategory = e => {
-    e.preventDefault();
-    const { dispatch, form } = this.props;
+    e.preventDefault()
+    const { dispatch, form, restaurant_id } = this.props
     form.validateFieldsAndScroll((err, fieldsValue) => {
-      if (err) return;
+      if (err) return
       try {
-        console.log('fieldsValue: ', fieldsValue);
+        console.log('fieldsValue: ', fieldsValue)
         new Promise((resolve, reject) => {
           dispatch({
             type: 'food/addCategory',
             payload: {
               ...fieldsValue,
-              resolve,
-            },
-          });
+              restaurant_id,
+              resolve
+            }
+          })
         })
           .then(({ success, message }) => {
             if (success) {
-              message.success('添加商铺成功');
+              message.success('添加食品种类成功')
               // 重置内容
               this.setState({
-                formData: deepCopy(globalFormData),
-                selectedCategory: deepCopy(selectedCategory),
-                activities: deepCopy(activities),
-              });
+                formData: deepCopy(globalFormData)
+              })
             } else {
-              message.error(message);
+              message.error(message)
             }
           })
           .catch(err => {
-            message.error('添加商铺出错');
-          });
+            message.error('添加食品种类出错', err)
+          })
       } catch (err) {
-        console.error('添加商铺失败：', err);
+        console.error('添加食品种类失败：', err)
       }
-    });
-  };
+    })
+  }
 
   renderAvancedForm = () => {
     const {
-      form: { getFieldDecorator },
-    } = this.props;
-    const { loading } = this.state;
+      form: { getFieldDecorator }
+    } = this.props
+    const { loading } = this.state
 
     return (
       <Fragment>
         <FormItem label="食品种类" {...formItemLayout}>
           {getFieldDecorator('name', {
-            rules: [{ required: true, message: '请输入食品种类' }],
+            rules: [{ required: true, message: '请输入食品种类' }]
           })(<Input placeholder="请输入" />)}
         </FormItem>
         <FormItem label="种类描述" {...formItemLayout}>
           {getFieldDecorator('description', {
-            rules: [{ required: true, message: '请输入种类描述' }],
+            rules: [{ required: true, message: '请输入种类描述' }]
           })(<Input placeholder="请输入" />)}
         </FormItem>
         <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
@@ -168,24 +183,23 @@ class AddCategoryForm extends PureComponent {
           </Button>
         </FormItem>
       </Fragment>
-    );
-  };
+    )
+  }
 
   render() {
     const {
       handleCancel,
       food: { categoryList = [] },
-      form: { getFieldDecorator },
-    } = this.props;
-    const { showAddCategory } = this.state;
-    // console.log('categoryList:  ', categoryList);
+      form: { getFieldDecorator }
+    } = this.props
+    const { showAddCategory, categorySelect } = this.state
     return (
       <Form onSubmit={this.addCategory}>
         <FormItem label="食品种类" {...formItemLayout}>
           {getFieldDecorator('categorySelect')(
-            <Select placeholder="请选择" onChange={this.handleSelectCategory}>
+            <Select placeholder={categorySelect.label} onChange={this.handleSelectCategory}>
               {categoryList.map((item, index) => (
-                <Option key={index} value={item.id}>
+                <Option key={index} value={index}>
                   {item.name}
                 </Option>
               ))}
@@ -196,21 +210,15 @@ class AddCategoryForm extends PureComponent {
         <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
           <div onClick={this.changeIsShowCategory}>
             {showAddCategory ? (
-              <Icon
-                type="caret-up"
-                style={{ fontSize: '16px', color: '#ccc', transition: 'all .4s' }}
-              />
+              <Icon type="caret-up" style={{ fontSize: '16px', color: '#ccc', transition: 'all .4s' }} />
             ) : (
-              <Icon
-                type="caret-down"
-                style={{ fontSize: '16px', color: '#ccc', transition: 'all .4s' }}
-              />
+              <Icon type="caret-down" style={{ fontSize: '16px', color: '#ccc', transition: 'all .4s' }} />
             )}
             <span>添加食品种类</span>
           </div>
         </FormItem>
       </Form>
-    );
+    )
   }
 }
 
@@ -219,7 +227,7 @@ class AddCategoryForm extends PureComponent {
  */
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food,
+  loading: loading.models.food
 }))
 @Form.create()
 class SpecsForm extends PureComponent {
@@ -227,57 +235,61 @@ class SpecsForm extends PureComponent {
     formData: {
       specs: '',
       packing_fee: 0,
-      price: 20,
-    },
-  };
+      price: 20
+    }
+  }
 
-  addSpecs = () => {
-    const { handleOk, form } = this.props;
+  addSpecs = e => {
+    e.preventDefault()
+    const { handleOk, form } = this.props
     form.validateFieldsAndScroll((err, fieldsValue) => {
-      console.log('err: ', err, fieldsValue);
-      if (err) return;
+      console.log('err: ', err, fieldsValue)
+      if (err) return
       this.setState({
         formData: {
           specs: '',
           packing_fee: 0,
-          price: 20,
-        },
-      });
-      handleOk && handleOk(fieldsValue);
-    });
-  };
+          price: 20
+        }
+      })
+      handleOk && handleOk(fieldsValue)
+    })
+  }
 
   getModalContent = () => {
-    const { formData } = this.state;
+    const {
+      form: { getFieldDecorator }
+    } = this.props
+    const { formData } = this.state
     return (
-      <Form>
+      <Form onSubmit={this.addSpecs}>
         <FormItem label="规格" {...formItemLayout}>
           {getFieldDecorator('specs', {
             rules: [{ required: true, message: '请输入规格' }],
-            initialValue: formData.specs,
+            initialValue: formData.specs
           })(<Input placeholder="请输入" autoComplete="off" />)}
         </FormItem>
         <FormItem label="包装费" {...formItemLayout}>
           {getFieldDecorator('packing_fee', {
-            initialValue: formData.packing_fee,
+            initialValue: formData.packing_fee
           })(<InputNumber min={0} max={100} />)}
         </FormItem>
         <FormItem label="价格" {...formItemLayout}>
           {getFieldDecorator('price', {
-            initialValue: formData.price,
+            initialValue: formData.price
           })(<InputNumber min={0} max={10000} />)}
         </FormItem>
       </Form>
-    );
-  };
+    )
+  }
 
   render() {
     const {
       modalVisible,
       handleCancel,
-      form: { getFieldDecorator },
-    } = this.props;
-    const modalFooter = { onText: '确定', onOk: this.addSpecs, onCancel: handleCancel };
+      form: { getFieldDecorator }
+    } = this.props
+    const modalFooter = { onText: '确定', onOk: this.addSpecs, onCancel: handleCancel }
     return (
       <Modal
         title="添加规格"
@@ -289,14 +301,14 @@ class SpecsForm extends PureComponent {
       >
         {this.getModalContent()}
       </Modal>
-    );
+    )
   }
 }
 
 /* eslint react/no-multi-comp:0 */
 @connect(({ food, loading }) => ({
   food,
-  loading: loading.models.food,
+  loading: loading.models.food
 }))
 @Form.create()
 class addFoodPage extends PureComponent {
@@ -306,8 +318,8 @@ class addFoodPage extends PureComponent {
     modalVisible: false,
     foodAvatarUploadLoading: false, // 食品头像loading
     formData: deepCopy(globalFormData), // 食品信息
-    foodSpecsType: 'one', // 食品规格类型 one: 单规格, more: 多规格
-  };
+    foodSpecsType: 'one' // 食品规格类型 one: 单规格, more: 多规格
+  }
 
   columns = [
     { title: '规格', dataIndex: 'specs', align: 'center', width: 120 },
@@ -324,25 +336,25 @@ class addFoodPage extends PureComponent {
             删除
           </Button>
         </Fragment>
-      ),
-    },
-  ];
+      )
+    }
+  ]
 
   componentDidMount() {
-    const { restaurant_id } = this.props.location.query;
-    console.log('restaurant_id: ', restaurant_id);
+    const { restaurant_id } = this.props.location.query
+    // console.log('restaurant_id: ', restaurant_id);
     if (!restaurant_id) {
       this.showConfirm()
-      return;
+      return
     }
     this.setState(
       {
-        restaurant_id,
+        restaurant_id
       },
       () => {
-        this.initData();
+        this.initData()
       }
-    );
+    )
   }
 
   showConfirm = () => {
@@ -356,57 +368,93 @@ class addFoodPage extends PureComponent {
       },
       onCancel() {
         message.info('取消')
-      },
-    });
-  };
+      }
+    })
+  }
 
   initData = async () => {
-    this.getCategory();
-  };
+    this.getCategory()
+  }
 
   // 获取食品分类
   getCategory = () => {
-    const { dispatch } = this.props;
-    const { restaurant_id } = this.state;
+    const { dispatch } = this.props
+    const { restaurant_id } = this.state
     const params = {
-      restaurant_id,
-    };
+      restaurant_id
+    }
     new Promise((resolve, reject) => {
       dispatch({
         type: 'food/getCategory',
-        payload: params,
-      });
+        payload: params
+      })
     })
       .then()
-      .catch();
-  };
+      .catch()
+  }
 
   addFood = e => {
-    e.preventDefault();
-    const { dispatch, form } = this.props;
-    const { formData } = this.state;
+    e.preventDefault()
+    const {
+      dispatch,
+      form,
+      food: { selectedCategoryValue = {} }
+    } = this.props
+    const { restaurant_id } = this.state
+    const formData = deepCopy(this.state.formData)
     form.validateFieldsAndScroll((err, fieldsValue) => {
-      if (err) return;
-      console.log('fieldsValue: ', fieldsValue, formData);
-      // this.setState({ formValues: fieldsValue });
-    });
-  };
+      if (err) return
+      new Promise((resolve, reject) => {
+        dispatch({
+          type: 'food/addFood',
+          payload: {
+            ...formData,
+            ...fieldsValue,
+            category_id: selectedCategoryValue.id,
+            restaurant_id,
+            resolve
+          }
+        })
+      })
+        .then(({ success, message }) => {
+          if (success) {
+            message.success('添加食品成功')
+            // 重置内容
+            this.setState({
+              formData: deepCopy(globalFormData),
+              foodSpecsType: 'one'
+            })
+            dispatch({
+              type: 'food/setSelectedCategoryValue',
+              payload: {
+                selectedCategoryValue: {}
+              }
+            })
+          } else {
+            message.error(message)
+          }
+        })
+        .catch(err => {
+          message.error('添加食品出错', err)
+        })
+    })
+  }
 
   shopAvatarNormFile = e => {
-    console.log('Upload event: ', e);
+    // console.log('Upload event: ', e);
     if (Array.isArray(e)) {
-      return e;
+      return e
     }
-    return e && e.fileList;
-  };
+    return e && e.fileList
+  }
 
   handleFoodAvatarChange = info => {
-    const { formData } = this.state;
+    const { formData } = this.state
     if (info.file.status === 'uploading') {
       this.setState({
-        foodAvatarUploadLoading: true,
-      });
-      return;
+        foodAvatarUploadLoading: true
+      })
+      return
     }
     if (info.file.status === 'done') {
       // Get this url from response in real world.
@@ -414,26 +462,26 @@ class addFoodPage extends PureComponent {
         this.setState({
           formData: {
             ...formData,
-            image_path: imageUrl,
+            image_path: imageUrl
           },
-          foodAvatarUploadLoading: false,
-        });
-      });
+          foodAvatarUploadLoading: false
+        })
+      })
     }
-  };
+  }
 
   // 切换单个/多个规格
   handleSelectFoodSpecs = e => {
     this.setState({
-      foodSpecsType: e.target.value,
-    });
-  };
+      foodSpecsType: e.target.value
+    })
+  }
 
   // 渲染单个规格
   renderOneFoodSpecs = () => {
     const {
-      form: { getFieldDecorator },
-    } = this.props;
+      form: { getFieldDecorator }
+    } = this.props
     return (
       <Fragment>
         <FormItem label="包装费" {...formItemLayout}>
@@ -443,78 +491,87 @@ class addFoodPage extends PureComponent {
           {getFieldDecorator('price')(<InputNumber min={0} max={10000} />)}
         </FormItem>
       </Fragment>
-    );
-  };
+    )
+  }
 
   // 渲染多个规格
   renderMoreFoodSpecs = () => {
     const {
-      form: { getFieldDecorator },
-    } = this.props;
-    const { formData } = this.state;
+      form: { getFieldDecorator }
+    } = this.props
+    const { formData } = this.state
     return (
       <Fragment>
         <FormItem {...submitFormLayout} style={{ marginTop: 32, marginBottom: 10 }}>
-          <Button type="primary">添加规格</Button>
+          <Button type="primary" onClick={this.openAddFoodSpecsModal}>
+            添加规格
+          </Button>
         </FormItem>
-        <Table rowKey="name" dataSource={formData.specs} columns={this.columns} />
+        <Table rowKey="specs" dataSource={formData.specs} columns={this.columns} />
       </Fragment>
-    );
-  };
+    )
+  }
 
   // 删除规格
   handleDeleteFoodSpecs = index => {
-    const { formData } = this.state;
-    const specs = deepCopy(this.state.formData.specs);
-    specs.splice(index, 1);
+    const { formData } = this.state
+    const specs = deepCopy(this.state.formData.specs)
+    specs.splice(index, 1)
     this.setState({
       formData: {
         ...formData,
-        specs,
-      },
-    });
-  };
+        specs
+      }
+    })
+  }
 
   // 添加规格
   handleAddFoodSpecsOk = (params = {}) => {
-    const { formData } = this.state;
+    const { formData } = this.state
     this.setState({
       formData: {
         ...formData,
-        specs: params,
+        specs: [...this.state.formData.specs, params]
       },
-      modalVisible: false,
-    });
-  };
+      modalVisible: false
+    })
+  }
 
   // 取消添加规格
   handleAddFoodSpecsCancel = () => {
     this.setState({
-      modalVisible: false,
-    });
-  };
+      modalVisible: false
+    })
+  }
+
+  // 打开添加规格的弹框
+  openAddFoodSpecsModal = () => {
+    this.setState({
+      modalVisible: true
+    })
+  }
 
   render() {
     const {
       loading,
       form: { getFieldDecorator },
-      food: { attributes },
-    } = this.props;
-    const { foodSpecsType, modalVisible, formData } = this.state;
+      food: { attributes }
+    } = this.props
+    const { foodSpecsType, modalVisible, formData, restaurant_id } = this.state
     const uploadFoodAvatarButton = (
       <div>
         <Icon type={this.state.foodAvatarUploadLoading ? 'loading' : 'plus'} />
         <div className="ant-upload-text">Upload</div>
       </div>
-    );
+    )
     return (
       <PageHeaderWrapper title="添加食品">
         <Card bordered={false}>
-          <AddCategoryForm />
+          <AddCategoryForm restaurant_id={restaurant_id} />
           <Form onSubmit={this.addFood} style={{ marginTop: 8 }}>
             <FormItem label="食品名称" {...formItemLayout}>
               {getFieldDecorator('name', {
-                rules: [{ required: true, message: '请输入食品名称' }],
+                rules: [{ required: true, message: '请输入食品名称' }]
               })(<Input autoComplete="off" />)}
             </FormItem>
             <FormItem label="食品活动" {...formItemLayout}>
@@ -527,7 +584,7 @@ class addFoodPage extends PureComponent {
               {getFieldDecorator('uploadShopAvatar', {
                 rules: [{ required: true, message: '请上传店铺头像' }],
                 valuePropName: 'image_path',
-                getValueFromEvent: this.shopAvatarNormFile,
+                getValueFromEvent: this.shopAvatarNormFile
               })(
                 <Upload
                   listType="picture-card"
@@ -537,17 +594,13 @@ class addFoodPage extends PureComponent {
                   beforeUpload={beforeUpload}
                   onChange={info => this.handleFoodAvatarChange(info)}
                 >
-                  {formData.image_path ? (
-                    <img src={formData.image_path} alt="avatar" />
-                  ) : (
-                    uploadFoodAvatarButton
-                  )}
+                  {formData.image_path ? <img src={formData.image_path} alt="avatar" /> : uploadFoodAvatarButton}
                 </Upload>
               )}
             </FormItem>
             <FormItem label="食品特点" {...formItemLayout}>
               {getFieldDecorator('attributes')(
-                <Select placeholder="请选择">
+                <Select placeholder="请选择" mode="multiple">
                   {attributes.map(item => (
                     <Option key={item.value} value={item.value}>
                       {item.label}
@@ -558,7 +611,7 @@ class addFoodPage extends PureComponent {
             </FormItem>
             <FormItem label="食品规格" {...formItemLayout}>
               {getFieldDecorator('foodSpecsType', {
-                initialValue: foodSpecsType,
+                initialValue: foodSpecsType
               })(
                 <RadioGroup onChange={this.handleSelectFoodSpecs}>
                   <Radio value="one">单规格</Radio>
@@ -582,7 +635,7 @@ class addFoodPage extends PureComponent {
           ) : null}
         </Card>
       </PageHeaderWrapper>
-    );
+    )
   }
 }
-export default addFoodPage;
+export default addFoodPage
